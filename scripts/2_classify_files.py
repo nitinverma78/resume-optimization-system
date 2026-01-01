@@ -2,7 +2,7 @@
 """
 Phase 1.2: Content-Based File Classifier (FINAL VERSION)
 Fixed based on user feedback:
-- Ownership: Just "Nitin Verma" in content is enough (lowered threshold)
+- Ownership: Checks for user's name via USER_NAME environment variable
 - Support: PPTX and old .doc files
 - Detection: Better distinguish presentations vs resumes
 """
@@ -105,17 +105,25 @@ def extract_text_from_pptx(file_path: Path) -> str:
 
 def is_user_document(
     text: str,       # Document text content (lowercase)
-    filename: str    # Document filename
+    filename: str,   # Document filename  
+    user_name: str = None  # User's full name (default: USER_NAME env var)
 ) -> bool:  # True if document belongs to user
-    """Check if document belongs to user (Nitin Verma in content OR filename)."""
+    """Check if document belongs to user (name in content OR filename)."""
+    # Get user name from env or parameter
+    if user_name is None:
+        user_name = os.getenv('USER_NAME', 'YOUR_NAME')  # Generic placeholder
+    
+    # Normalize for search
+    user_lower = user_name.lower()
+    user_compact = user_lower.replace(' ', '')
+    
     # Check filename
     filename_lower = filename.lower()
-    has_name_in_filename = bool(re.search(r'nitin.*verma|nitinverma', filename_lower))
+    has_name_in_filename = user_compact in filename_lower.replace(' ', '')
     
-    # Check content for name
-    has_name_in_content = bool(re.search(r'nitin\s+verma', text))
+    # Check content
+    has_name_in_content = user_lower in text
     
-    # Either is sufficient
     return has_name_in_filename or has_name_in_content
 
 
@@ -347,12 +355,14 @@ def classify_files_from_inventory(
 
 def main(
     inventory_file: Path = Path(__file__).parent.parent / "data" / "file_inventory.json",  # Input inventory
-    output_file: Path = Path(__file__).parent.parent / "data" / "classified_files.json"  # Output classified
+    output_file: Path = Path(__file__).parent.parent / "data" / "classified_files.json",  # Output classified
+    user_name: str = None  # User's full name for ownership detection (default: USER_NAME env var)
 ):
     """Main execution."""
     # Allow environment variables to override defaults
     inventory_file = Path(os.getenv('INVENTORY_FILE', str(inventory_file)))
     output_file = Path(os.getenv('CLASSIFIED_FILE', str(output_file)))
+    user_name = os.getenv('USER_NAME', user_name)  # Get from env if not provided
     
     if not inventory_file.exists():
         print(f"Error: File inventory not found at {inventory_file}")

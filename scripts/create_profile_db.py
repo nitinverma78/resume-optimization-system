@@ -56,15 +56,20 @@ def extract_section(
 
 
 def parse_profile(
-    raw_text: str  # Raw text from LinkedIn PDF
+    raw_text: str,  # Raw text from LinkedIn PDF
+    user_name: str = None  # User's full name (default: USER_NAME env var)
 ) -> Profile:  # Structured Profile object
     """Parse LinkedIn profile text into structured data."""
+    # Get user name from env or parameter
+    if user_name is None:
+        user_name = os.getenv('USER_NAME', 'Your Name')  # Generic placeholder
+    
     # Extract basic info
-    name_match = re.search(r"(Nitin Verma)", raw_text)
-    name = name_match.group(1) if name_match else ""
+    name_match = re.search(rf"({re.escape(user_name)})", raw_text)
+    name = name_match.group(1) if name_match else user_name
     
     # Extract headline (the long title after name)
-    headline_match = re.search(r"Nitin Verma\n(.*?)\n(?:Greater Boston|Summary)", raw_text, re.DOTALL)
+    headline_match = re.search(rf"{re.escape(user_name)}\n(.*?)\n(?:Greater|Summary)", raw_text, re.DOTALL)
     headline = headline_match.group(1).strip().replace('\n', ' ') if headline_match else ""
     
     # Extract summary
@@ -91,7 +96,7 @@ def parse_profile(
     education = _parse_education_section(raw_text)
     
     # Extract patents
-    patents_section = extract_section(raw_text, "Patents", "Nitin Verma")
+    patents_section = extract_section(raw_text, "Patents", user_name)
     patents = [p.strip() for p in patents_section.split('\n') if p.strip() and len(p.strip()) > 10]
     
     # Extract publications
@@ -184,18 +189,20 @@ def _parse_education_section(
 
 def main(
     linkedin_json: Path = Path(__file__).parent.parent / "profile-data" / "linkedin-profile-parsed.json",  # Input LinkedIn JSON
-    output_json: Path = Path(__file__).parent.parent / "profile-data" / "profile-structured.json"  # Output structured
-):
+    output_json: Path = Path(__file__).parent.parent / "profile-data" / "profile-structured.json",  # Output structured
+    user_name: str = None  # User's full name for parsing (default: USER_NAME env var)
+) -> Profile:  # Structured Profile object
     """Main execution."""
     # Allow environment variables to override defaults
     linkedin_json = Path(os.getenv('LINKEDIN_JSON', str(linkedin_json)))
     output_json = Path(os.getenv('PROFILE_JSON', str(output_json)))
+    user_name = os.getenv('USER_NAME', user_name)  # Get from env if not provided
     
     with open(linkedin_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     print("Creating structured profile database...")
-    profile = parse_profile(data['raw_text'])
+    profile = parse_profile(data['raw_text'], user_name)
     
     # Convert to dict for JSON serialization
     profile_dict = {

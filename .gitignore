@@ -186,6 +186,13 @@ $RECYCLE.BIN/
 # PROJECT SPECIFIC
 # ============================================
 
+# Personal diagnostic scripts (contain Nitin's specific filenames)
+# These are dev/debug tools with hardcoded personal data
+scripts/analyze_specific_files.py
+scripts/check_misclassified.py
+scripts/debug_patterns.py
+scripts/verify_fixes.py
+
 # Logs
 *.log
 
