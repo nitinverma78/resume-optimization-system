@@ -3,10 +3,9 @@
 Parse LinkedIn profile PDF and extract structured data.
 """
 
-import sys
-import json
+import sys, json
 from pathlib import Path
-import pymupdf  # PyMuPDF
+import pymupdf
 
 
 def parse_linkedin_pdf(pdf_path: Path) -> dict:
@@ -30,14 +29,8 @@ def parse_linkedin_pdf(pdf_path: Path) -> dict:
     page_count = doc.page_count
     doc.close()
     
-    # For now, return raw text - we'll add structured parsing next
-    return {
-        "raw_text": full_text,
-        "metadata": {
-            "source": str(pdf_path),
-            "pages": page_count,
-        }
-    }
+    # Return raw text with metadata
+    return {"raw_text": full_text, "metadata": {"source": str(pdf_path), "pages": page_count}}
 
 
 def main():

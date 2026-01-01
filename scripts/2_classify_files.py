@@ -7,15 +7,13 @@ Fixed based on user feedback:
 - Detection: Better distinguish presentations vs resumes
 """
 
-import json
-import re
+import json, re, subprocess
 from pathlib import Path
 from typing import List, Dict, Tuple
 from pydantic import BaseModel
-import pymupdf  # PyMuPDF
+import pymupdf
 from docx import Document
 from pptx import Presentation
-import subprocess
 
 
 class ClassifiedFiles(BaseModel):
@@ -238,21 +236,15 @@ def classify_file_by_content(file_info: Dict) -> Tuple[str, str]:
     if ext not in ['.pdf', '.docx', '.doc', '.pptx', '.txt']:
         return 'other', f'unsupported file type {ext}'
     
-    # Extract text content
+    # Extract text content - aligned for clarity
     text = ""
-    if ext == '.pdf':
-        text = extract_text_from_pdf(file_path)
-    elif ext == '.docx':
-        text = extract_text_from_docx(file_path)
-    elif ext == '.doc':
-        text = extract_text_from_old_doc(file_path)
-    elif ext == '.pptx':
-        text = extract_text_from_pptx(file_path)
+    if   ext == '.pdf':  text = extract_text_from_pdf(file_path)
+    elif ext == '.docx': text = extract_text_from_docx(file_path)
+    elif ext == '.doc':  text = extract_text_from_old_doc(file_path)
+    elif ext == '.pptx': text = extract_text_from_pptx(file_path)
     elif ext == '.txt':
-        try:
-            text = file_path.read_text(encoding='utf-8').lower()
-        except:
-            pass
+        try: text = file_path.read_text(encoding='utf-8').lower()
+        except: pass
     
     if not text:
         return 'other', 'could not extract text'
@@ -323,18 +315,13 @@ def classify_files_from_inventory(inventory_path: Path) -> ClassifiedFiles:
         # Add reason to file info for debugging
         file_info['classification_reason'] = reason
         
-        if category == 'user_resume':
-            classified['user_resumes'].append(file_info)
-        elif category == 'user_cover_letter':
-            classified['user_cover_letters'].append(file_info)
-        elif category == 'user_combined':
-            classified['user_combined'].append(file_info)
-        elif category == 'other_resume':
-            classified['other_resumes'].append(file_info)
-        elif category == 'tracking_file':
-            classified['tracking_files'].append(file_info)
-        else:
-            classified['other'].append(file_info)
+        # Aligned categorization for clarity
+        if   category == 'user_resume':       classified['user_resumes'].append(file_info)
+        elif category == 'user_cover_letter': classified['user_cover_letters'].append(file_info)
+        elif category == 'user_combined':     classified['user_combined'].append(file_info)
+        elif category == 'other_resume':      classified['other_resumes'].append(file_info)
+        elif category == 'tracking_file':     classified['tracking_files'].append(file_info)
+        else:                                 classified['other'].append(file_info)
     
     return ClassifiedFiles(**classified)
 

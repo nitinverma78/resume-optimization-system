@@ -4,8 +4,7 @@ Phase 1.1: File Scanner
 Scans a folder and creates a complete inventory of all files with metadata.
 """
 
-import json
-import os
+import json, os
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict
@@ -56,8 +55,7 @@ def scan_folder(folder_path: Path, recursive: bool = True) -> List[FileInfo]:
                 try:
                     stat = file_path.stat()
                     files.append(FileInfo(
-                        path=str(file_path),
-                        name=filename,
+                        path=str(file_path), name=filename,
                         extension=file_path.suffix.lower(),
                         size_bytes=stat.st_size,
                         modified_date=datetime.fromtimestamp(stat.st_mtime).isoformat(),
@@ -130,8 +128,7 @@ def main():
     inventory = FileInventory(
         scan_date=datetime.now().isoformat(),
         source_folder=str(RESUME_FOLDER),
-        total_files=len(file_list),
-        total_directories=len(dir_list),
+        total_files=len(file_list), total_directories=len(dir_list),
         files=files
     )
     
