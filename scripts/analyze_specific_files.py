@@ -3,7 +3,7 @@
 Quick script to analyze specific files and determine their content type.
 """
 
-import pymupdf
+import pymupdf, os
 from pathlib import Path
 from docx import Document
 import re
@@ -83,9 +83,12 @@ def analyze_content(text: str) -> dict:
     }
 
 
-def main():
+def main(
+    base_path: Path = Path.home() / "Downloads" / "NitinResumes"  # Resume folder
+):
     """Analyze specific files."""
-    base_path = Path.home() / "Downloads" / "NitinResumes"
+    # Allow environment variable override
+    base_path = Path(os.getenv('RESUME_FOLDER', str(base_path)))
     
     files_to_check = [
         "Nitin Verma CL Kayak.pdf",

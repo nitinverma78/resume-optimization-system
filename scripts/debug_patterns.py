@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Debug why specific files are misclassified."""
 
-import pymupdf
-import re
+import pymupdf, re, os
 from pathlib import Path
 
 def analyze_resume_patterns(file_path: Path):
@@ -107,17 +106,25 @@ def analyze_resume_patterns(file_path: Path):
         print(f"  → RESULT: user_resume (default)")
 
 
-base_path = Path.home() / "Downloads" / "NitinResumes"
+def main(
+    base_path: Path = Path.home() / "Downloads" / "NitinResumes"  # Resume folder
+):
+    """Debug pattern detection."""
+    # Allow environment variable override
+    base_path = Path(os.getenv('RESUME_FOLDER', str(base_path)))
+    
+    files_to_debug = [
+        "EnterpriseAgenticAI.pdf",
+        "AspenDentalCoverLetter.pdf",
+        "TheRealRealCoverLetter.pdf",
+    ]
+    
+    for filename in files_to_debug:
+        file_path = base_path / filename
+        if file_path.exists():
+            analyze_resume_patterns(file_path)
+        else:
+            print(f"\n❌ {filename}: FILE NOT FOUND")
 
-files_to_debug = [
-    "EnterpriseAgenticAI.pdf",
-    "AspenDentalCoverLetter.pdf",
-    "TheRealRealCoverLetter.pdf",
-]
-
-for filename in files_to_debug:
-    file_path = base_path / filename
-    if file_path.exists():
-        analyze_resume_patterns(file_path)
-    else:
-        print(f"\n❌ {filename}: FILE NOT FOUND")
+if __name__ == "__main__":
+    main()

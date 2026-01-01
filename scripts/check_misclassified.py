@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Check why specific files are misclassified."""
 
-import pymupdf
-import json
+import pymupdf, json, os
 from pathlib import Path
 from docx import Document
 
@@ -53,44 +52,52 @@ def check_file_content(file_path: Path):
         print(f"Error reading file: {e}")
 
 
-base_path = Path.home() / "Downloads" / "NitinResumes"
+def main(
+    base_path: Path = Path.home() / "Downloads" / "NitinResumes"  # Resume folder
+):
+    """Check misclassified files."""
+    # Allow environment variable override
+    base_path = Path(os.getenv('RESUME_FOLDER', str(base_path)))
+    
+    print("\n" + "="*70)
+    print("RECRUITER CONTACT FILES (classified as resumes)")
+    print("="*70)
+    
+    recruiter_files = [
+        "ExecFirmsDetailed31.pdf",
+        "ExecSearchDetailed1972.pdf",
+        "ExecSearchDetailed544.pdf",
+        "ExecSearchDetailed926.pdf",
+        "ExecSearchDetailed15.pdf",
+    ]
+    
+    for filename in recruiter_files:
+        check_file_content(base_path / filename)
+    
+    print("\n\n" + "="*70)
+    print("JOB DESCRIPTION FILES (classified as resumes)")
+    print("="*70)
+    
+    jd_files = [
+        "VP of IT, Artificial Intelligence & Innovation Job Description.docx",
+        "Vice-President--Customer-Experience-Technology.pdf",
+    ]
+    
+    for filename in jd_files:
+        check_file_content(base_path / filename)
+    
+    print("\n\n" + "="*70)
+    print("FILES CLASSIFIED AS 'OTHER'")
+    print("="*70)
+    
+    other_files = [
+        "Nitin Verma CL.pdf",
+        "Nitin Verma RMR.pdf",
+        "Nitin Verma.pdf",
+    ]
+    
+    for filename in other_files:
+        check_file_content(base_path / filename)
 
-print("\n" + "="*70)
-print("RECRUITER CONTACT FILES (classified as resumes)")
-print("="*70)
-
-recruiter_files = [
-    "ExecFirmsDetailed31.pdf",
-    "ExecSearchDetailed1972.pdf",
-    "ExecSearchDetailed544.pdf",
-    "ExecSearchDetailed926.pdf",
-    "ExecSearchDetailed15.pdf",
-]
-
-for filename in recruiter_files:
-    check_file_content(base_path / filename)
-
-print("\n\n" + "="*70)
-print("JOB DESCRIPTION FILES (classified as resumes)")
-print("="*70)
-
-jd_files = [
-    "VP of IT, Artificial Intelligence & Innovation Job Description.docx",
-    "Vice-President--Customer-Experience-Technology.pdf",
-]
-
-for filename in jd_files:
-    check_file_content(base_path / filename)
-
-print("\n\n" + "="*70)
-print("FILES CLASSIFIED AS 'OTHER'")
-print("="*70)
-
-other_files = [
-    "Nitin Verma CL.pdf",
-    "Nitin Verma RMR.pdf",
-    "Nitin Verma.pdf",
-]
-
-for filename in other_files:
-    check_file_content(base_path / filename)
+if __name__ == "__main__":
+    main()

@@ -3,13 +3,15 @@
 Quick check to verify specific files are classified correctly.
 """
 
-import json
+import json, os
 from pathlib import Path
 
-def check_specific_files():
+def check_specific_files(
+    classified_file: Path = Path(__file__).parent.parent / "data" / "classified_files.json"  # Classified files JSON
+):
     """Check classification of specific problematic files."""
-    
-    classified_file = Path(__file__).parent.parent / "data" / "classified_files.json"
+    # Allow environment variable override
+    classified_file = Path(os.getenv('CLASSIFIED_FILE', str(classified_file)))
     
     with open(classified_file, 'r') as f:
         data = json.load(f)

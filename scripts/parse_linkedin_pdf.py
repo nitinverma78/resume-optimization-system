@@ -3,7 +3,7 @@
 Parse LinkedIn profile PDF and extract structured data.
 """
 
-import sys, json
+import sys, json, os
 from pathlib import Path
 import pymupdf
 
@@ -33,9 +33,15 @@ def parse_linkedin_pdf(pdf_path: Path) -> dict:
     return {"raw_text": full_text, "metadata": {"source": str(pdf_path), "pages": page_count}}
 
 
-def main():
+def main(
+    pdf_path: Path = Path(__file__).parent.parent / "profile-data" / "NitinVermaLinkedInProfile.pdf",  # Input PDF
+    output_json: Path = None  # Output JSON (default: same dir as PDF)
+):
     """Main execution."""
-    pdf_path = Path(__file__).parent.parent / "profile-data" / "NitinVermaLinkedInProfile.pdf"
+    # Allow environment variables to override defaults
+    pdf_path = Path(os.getenv('LINKEDIN_PDF', str(pdf_path)))
+    if output_json is None:
+        output_json = pdf_path.parent / "linkedin-profile-parsed.json"
     
     if not pdf_path.exists():
         print(f"Error: PDF not found at {pdf_path}", file=sys.stderr)
@@ -45,12 +51,11 @@ def main():
     data = parse_linkedin_pdf(pdf_path)
     
     # Save to JSON
-    output_path = pdf_path.parent / "linkedin-profile-parsed.json"
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(output_json, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     
     print(f"✓ Parsed successfully!")
-    print(f"✓ Saved to: {output_path}")
+    print(f"✓ Saved to: {output_json}")
     print(f"\nExtracted {len(data['raw_text'])} characters")
     
     # Preview first 500 characters

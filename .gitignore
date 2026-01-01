@@ -183,16 +183,9 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 
-# ============================================
 # PROJECT SPECIFIC
 # ============================================
 
-# Diagnostic/debug scripts (may contain private data)
-scripts/analyze_specific_files.py
-scripts/diagnose_classifications.py
-scripts/verify_fixes.py
-scripts/debug_patterns.py
-scripts/check_misclassified.py
-
 # Logs
 *.log
+
