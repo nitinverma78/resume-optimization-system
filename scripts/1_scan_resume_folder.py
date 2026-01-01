@@ -10,9 +10,15 @@ from datetime import datetime
 from typing import List, Dict
 from pydantic import BaseModel
 
+# Type alias for file information list
+FileList = List['FileInfo']
+
 
 class FileInfo(BaseModel):
-    """Model for file information."""
+    """Model for file information."""    
+    class Config:
+        frozen = True  # Immutable
+    
     path: str
     name: str
     extension: str
@@ -22,18 +28,21 @@ class FileInfo(BaseModel):
 
 
 class FileInventory(BaseModel):
-    """Model for complete file inventory."""
+    """Model for complete file inventory."""    
+    class Config:
+        frozen = True  # Immutable
+    
     scan_date: str
     source_folder: str
     total_files: int
     total_directories: int
-    files: List[FileInfo]
+    files: FileList
 
 
 def scan_folder(
     folder_path: Path,  # Path to folder to scan
     recursive: bool = True  # Whether to scan subdirectories
-) -> List[FileInfo]:  # List of FileInfo objects
+) -> FileList:  # List of FileInfo objects
     """Scan a folder and gather file information."""
     files = []
     
@@ -96,23 +105,26 @@ def scan_folder(
     return files
 
 
-def main():
+def main(
+    resume_folder: Path = Path.home() / "Downloads" / "NitinResumes",  # Folder to scan
+    output_file: Path = Path(__file__).parent.parent / "data" / "file_inventory.json"  # Output JSON
+):
     """Main execution."""
-    # Configuration
-    RESUME_FOLDER = Path.home() / "Downloads" / "NitinResumes"
-    OUTPUT_FILE = Path(__file__).parent.parent / "data" / "file_inventory.json"
+    # Allow environment variables to override defaults
+    resume_folder = Path(os.getenv('RESUME_FOLDER', str(resume_folder)))
+    output_file = Path(os.getenv('OUTPUT_FILE', str(output_file)))
     
     # Validate folder exists
-    if not RESUME_FOLDER.exists():
-        print(f"Error: Folder not found: {RESUME_FOLDER}")
-        print("Please update RESUME_FOLDER path in the script.")
+    if not resume_folder.exists():
+        print(f"Error: Folder not found: {resume_folder}")
+        print("Please provide a valid folder path.")
         return
     
-    print(f"Scanning folder: {RESUME_FOLDER}")
+    print(f"Scanning folder: {resume_folder}")
     print("This may take a moment for large folders...\n")
     
     # Scan folder
-    files = scan_folder(RESUME_FOLDER, recursive=True)
+    files = scan_folder(resume_folder, recursive=True)
     
     # Separate files and directories
     file_list = [f for f in files if not f.is_directory]
@@ -121,20 +133,20 @@ def main():
     # Create inventory
     inventory = FileInventory(
         scan_date=datetime.now().isoformat(),
-        source_folder=str(RESUME_FOLDER),
+        source_folder=str(resume_folder),
         total_files=len(file_list), total_directories=len(dir_list),
         files=files
     )
     
     # Save to JSON
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(inventory.model_dump(), f, indent=2, ensure_ascii=False)
     
     # Print summary
     print(f"✓ Scan complete!")
     print(f"✓ Found {len(file_list)} files in {len(dir_list)} directories")
-    print(f"✓ Saved to: {OUTPUT_FILE}\n")
+    print(f"✓ Saved to: {output_file}\n")
     
     # Show file type breakdown
     extensions = {}

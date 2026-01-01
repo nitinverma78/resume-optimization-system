@@ -347,6 +347,93 @@ preprocess = Pipeline(
 
 ---
 
+## Type Safety Patterns (from RL-Book)
+
+These patterns enforce stronger type safety while maintaining readability.
+
+### 1. Frozen Dataclasses for Immutability
+```python
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class ResumeMetadata:
+    """Immutable resume metadata."""
+    company: str
+    role: str
+    date: str
+    category: str
+    
+    # No accidental mutations possible
+    # Safe for concurrent processing
+```
+
+**Why:** Prevents accidental mutations, safer in concurrent code
+
+### 2. Type Aliases for Complex Types
+```python
+from typing import Dict, List, Tuple
+
+# Complex type made readable
+BulletPoint = Tuple[str, List[str], Dict[str, float]]  # (text, keywords, metrics)
+ResumeSection = Dict[str, List[BulletPoint]]
+KnowledgeBase = Dict[str, ResumeSection]
+
+# Usage
+def extract_bullets(section: ResumeSection) -> List[BulletPoint]:
+    return section.get('experience', [])
+```
+
+**Why:** Self-documenting, reduces cognitive load, easier to refactor
+
+### 3. Generic Types for Reusable Components
+```python
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+
+class Pipeline(Generic[T]):
+    """Generic transformation pipeline."""
+    def __init__(self, *transforms): self.tfms = transforms
+    def __call__(self, item: T) -> T: 
+        return reduce(lambda val,tfm: tfm(val), self.tfms, item)
+
+# Type-safe usage
+text_pipeline: Pipeline[str] = Pipeline(lowercase, remove_stopwords, lemmatize)
+resume_pipeline: Pipeline[Resume] = Pipeline(extract_text, parse_sections, extract_bullets)
+```
+
+**Why:** Reusable components with type safety
+
+### 4. Domain-Specific Type Wrappers
+```python
+from typing import NewType
+
+# Semantic types (no runtime overhead)
+ResumeID = NewType('ResumeID', str)
+BulletID = NewType('BulletID', str)
+CompanyName = NewType('CompanyName', str)
+
+def get_resume(resume_id: ResumeID) -> Resume:
+    # Type checker ensures we don't pass a BulletID here
+    pass
+```
+
+**Why:** Prevents mixing up similar primitive types
+
+---
+
+**What NOT to Adopt from RL-Book:**
+- ❌ Overly long function names (`objective_gradient` → `obj_grad`)
+- ❌ Excessive vertical spacing between methods
+- ❌ Missing inline parameter documentation
+
+**Combine with Fast.ai:**
+- ✅ RL-book type safety + fast.ai brevity = best of both
+- ✅ Frozen dataclasses + inline docs + compact signatures
+- ✅ Type aliases + domain abbreviations
+
+---
+
 ### Function Structure
 ```python
 def function_name(param: Type) -> ReturnType:

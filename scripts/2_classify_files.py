@@ -7,28 +7,37 @@ Fixed based on user feedback:
 - Detection: Better distinguish presentations vs resumes
 """
 
-import json, re, subprocess
+import json, re, subprocess, os
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, NewType
 from pydantic import BaseModel
 import pymupdf
 from docx import Document
 from pptx import Presentation
 
+# Type aliases for clarity
+FilePath = NewType('FilePath', Path)
+Category = NewType('Category', str)
+Reason = NewType('Reason', str)
+TextContent = NewType('TextContent', str)
+
 
 class ClassifiedFiles(BaseModel):
-    """Model for classified file categories."""
-    user_resumes: List[Dict]  # Resume only
-    user_cover_letters: List[Dict]  # Cover letter only
-    user_combined: List[Dict]  # Both resume + cover letter in one file
+    """Model for classified file categories."""    
+    class Config:
+        frozen = True  # Make immutable
+    
+    user_resumes: List[Dict]
+    user_cover_letters: List[Dict]
+    user_combined: List[Dict]
     other_resumes: List[Dict]
     tracking_files: List[Dict]
     other: List[Dict]
 
 
 def extract_text_from_pdf(
-    file_path: Path  # Path to PDF file
-) -> str:  # Extracted text in lowercase
+    file_path: FilePath  # Path to PDF file
+) -> TextContent:  # Extracted text in lowercase
     """Extract text from PDF."""
     try:
         doc = pymupdf.open(file_path)
@@ -43,8 +52,8 @@ def extract_text_from_pdf(
 
 
 def extract_text_from_docx(
-    file_path: Path  # Path to DOCX file
-) -> str:  # Extracted text in lowercase
+    file_path: FilePath  # Path to DOCX file
+) -> TextContent:  # Extracted text in lowercase
     """Extract text from DOCX file."""
     try:
         doc = Document(file_path)
@@ -336,28 +345,32 @@ def classify_files_from_inventory(
     return ClassifiedFiles(**classified)
 
 
-def main():
+def main(
+    inventory_file: Path = Path(__file__).parent.parent / "data" / "file_inventory.json",  # Input inventory
+    output_file: Path = Path(__file__).parent.parent / "data" / "classified_files.json"  # Output classified
+):
     """Main execution."""
-    INVENTORY_FILE = Path(__file__).parent.parent / "data" / "file_inventory.json"
-    OUTPUT_FILE = Path(__file__).parent.parent / "data" / "classified_files.json"
+    # Allow environment variables to override defaults
+    inventory_file = Path(os.getenv('INVENTORY_FILE', str(inventory_file)))
+    output_file = Path(os.getenv('CLASSIFIED_FILE', str(output_file)))
     
-    if not INVENTORY_FILE.exists():
-        print(f"Error: File inventory not found at {INVENTORY_FILE}")
+    if not inventory_file.exists():
+        print(f"Error: File inventory not found at {inventory_file}")
         print("Please run 1_scan_resume_folder.py first.")
         return
     
     print("Classifying files using FINAL IMPROVED CONTENT ANALYSIS...")
     print("Now with: PPTX support, old .doc support, better ownership detection\n")
     
-    classified = classify_files_from_inventory(INVENTORY_FILE)
+    classified = classify_files_from_inventory(inventory_file)
     
     # Save classification results
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(classified.model_dump(), f, indent=2, ensure_ascii=False)
     
     # Print summary
     print(f"\n✓ Classification complete!")
-    print(f"✓ Saved to: {OUTPUT_FILE}\n")
+    print(f"✓ Saved to: {output_file}\n")
     
     print("Classification Summary:")
     print(f"  User Resumes (resume only): {len(classified.user_resumes)} files")

@@ -4,7 +4,7 @@ Create a structured profile database from LinkedIn PDF.
 Extracts experiences, skills, education, and achievements into searchable format.
 """
 
-import json, re
+import json, re, os
 from pathlib import Path
 from dataclasses import dataclass,asdict
 from typing import List, Dict
@@ -182,12 +182,16 @@ def _parse_education_section(
     return education
 
 
-def main():
+def main(
+    linkedin_json: Path = Path(__file__).parent.parent / "profile-data" / "linkedin-profile-parsed.json",  # Input LinkedIn JSON
+    output_json: Path = Path(__file__).parent.parent / "profile-data" / "profile-structured.json"  # Output structured
+):
     """Main execution."""
-    # Load parsed JSON
-    json_path = Path(__file__).parent.parent / "profile-data" / "linkedin-profile-parsed.json"
+    # Allow environment variables to override defaults
+    linkedin_json = Path(os.getenv('LINKEDIN_JSON', str(linkedin_json)))
+    output_json = Path(os.getenv('PROFILE_JSON', str(output_json)))
     
-    with open(json_path, 'r', encoding='utf-8') as f:
+    with open(linkedin_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     print("Creating structured profile database...")
@@ -207,11 +211,11 @@ def main():
     }
     
     # Save structured profile
-    output_path = json_path.parent / "profile-structured.json"
-    with open(output_path, 'w', encoding='utf-8') as f:
+    output_json.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_json, 'w', encoding='utf-8') as f:
         json.dump(profile_dict, f, indent=2, ensure_ascii=False)
     
-    print(f"✓ Structured profile saved to: {output_path}")
+    print(f"✓ Structured profile saved to: {output_json}")
     print(f"\n=== Profile Summary ===")
     print(f"Name: {profile.name}")
     print(f"Headline: {profile.headline[:100]}...")

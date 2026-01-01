@@ -5,6 +5,7 @@ Generate a readable classification report for user review.
 
 import json
 from pathlib import Path
+import os
 
 
 def generate_classification_report(classified_path: Path, output_md: Path):
@@ -65,21 +66,25 @@ def generate_classification_report(classified_path: Path, output_md: Path):
         f.writelines(report)
 
 
-def main():
+def main(
+    classified_file: Path = Path(__file__).parent.parent / "data" / "classified_files.json",  # Input classified
+    output_md: Path = Path(__file__).parent.parent / "data" / "classification_report.md"  # Output report
+):
     """Main execution."""
-    CLASSIFIED_FILE = Path(__file__).parent.parent / "data" / "classified_files.json"
-    OUTPUT_FILE = Path(__file__).parent.parent / "data" / "classification_report.md"
+    # Allow environment variables to override defaults
+    classified_file = Path(os.getenv('CLASSIFIED_FILE', str(classified_file)))
+    output_md = Path(os.getenv('REPORT_FILE', str(output_md)))
     
-    if not CLASSIFIED_FILE.exists():
-        print(f"Error: Classified files not found at {CLASSIFIED_FILE}")
+    if not classified_file.exists():
+        print(f"Error: Classified files not found at {classified_file}")
         print("Please run 2_classify_files.py first.")
         return
     
     print("Generating classification report...")
-    generate_classification_report(CLASSIFIED_FILE, OUTPUT_FILE)
+    generate_classification_report(classified_file, output_md)
     
-    print(f"✓ Report generated: {OUTPUT_FILE}")
-    print(f"\nYou can review the classifications in: {OUTPUT_FILE}")
+    print(f"✓ Report generated: {output_md}")
+    print(f"\nYou can review the classifications in: {output_md}")
 
 
 if __name__ == "__main__":
