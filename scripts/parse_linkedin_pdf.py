@@ -34,7 +34,7 @@ def parse_linkedin_pdf(pdf_path: Path) -> dict:
 
 
 def main(
-    pdf_path: Path = Path(__file__).parent.parent / "profile-data" / "NitinVermaLinkedInProfile.pdf",  # Input PDF
+    pdf_path: Path = Path(__file__).parent.parent / "profile-data" / "MyLinkedInProfile.pdf",  # Input PDF
     output_json: Path = None  # Output JSON (default: same dir as PDF)
 ):
     """Main execution."""

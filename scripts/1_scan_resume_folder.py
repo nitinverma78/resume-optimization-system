@@ -106,7 +106,7 @@ def scan_folder(
 
 
 def main(
-    resume_folder: Path = Path.home() / "Downloads" / "NitinResumes",  # Folder to scan
+    resume_folder: Path = Path.home() / "Downloads" / "MyResumes",  # Folder to scan
     output_file: Path = Path(__file__).parent.parent / "data" / "file_inventory.json"  # Output JSON
 ):
     """Main execution."""

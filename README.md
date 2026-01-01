@@ -23,7 +23,7 @@ This system uses semantic search and LLM-based content generation to:
 ```
 resume-optimization-system/
 ├── profile-data/              # Your LinkedIn profile and structured data
-│   ├── NitinVermaLinkedInProfile.pdf
+│   ├── MyLinkedInProfile.pdf
 │   ├── linkedin-profile-parsed.json
 │   └── profile-structured.json
 ├── samples/                   # Manual optimization examples (to be added)

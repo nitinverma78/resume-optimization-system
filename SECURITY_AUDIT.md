@@ -31,15 +31,19 @@ git ls-files | grep -E '\.(pdf|docx|doc|xlsx|pptx)$'
 ## 3. Search for Personal Information in Code
 
 ```bash
+# Replace YOUR_NAME with your actual name
+YOUR_NAME="John Doe"  # Set this to your name
+YOUR_USERNAME="john"  # Set this to your system username
+
 # Search for your name (case-insensitive)
-git grep -i "nitin verma"
+git grep -i "$YOUR_NAME"
 
 # Search for personal emails
 git grep -E "[a-z]+@[a-z]+\.(com|ai|net)"
 
-# Search for hardcoded paths
-git grep -i "/Users/nitin"
-git grep -i "Downloads/NitinResumes"
+# Search for hardcoded paths with your username
+git grep -i "/Users/$YOUR_USERNAME"
+git grep -i "Downloads/MyResumes"
 ```
 
 **Expected:** Only in examples/sample_profile.json or comments
