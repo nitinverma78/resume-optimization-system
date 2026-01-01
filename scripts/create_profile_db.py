@@ -4,10 +4,9 @@ Create a structured profile database from LinkedIn PDF.
 Extracts experiences, skills, education, and achievements into searchable format.
 """
 
-import json
-import re
+import json, re
 from pathlib import Path
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass,asdict
 from typing import List, Dict
 
 
@@ -45,23 +44,21 @@ class Profile:
     publications: List[str]
 
 
-def extract_section(text: str, section_start: str, next_section: str = None) -> str:
+def extract_section(
+    text: str,                # Full document text
+    section_start: str,       # Section header to find
+    next_section: str = None  # Next section header (optional)
+) -> str:  # Extracted section text
     """Extract text between section headers."""
     pattern = f"{re.escape(section_start)}(.*?)({'(' + re.escape(next_section) + ')' if next_section else '$'})"
     match = re.search(pattern, text, re.DOTALL)
     return match.group(1).strip() if match else ""
 
 
-def parse_profile(raw_text: str) -> Profile:
-    """
-    Parse LinkedIn profile text into structured data.
-    
-    Args:
-        raw_text: Raw text from PDF
-        
-    Returns:
-        Structured Profile object
-    """
+def parse_profile(
+    raw_text: str  # Raw text from LinkedIn PDF
+) -> Profile:  # Structured Profile object
+    """Parse LinkedIn profile text into structured data."""
     # Extract basic info
     name_match = re.search(r"(Nitin Verma)", raw_text)
     name = name_match.group(1) if name_match else ""
@@ -74,16 +71,13 @@ def parse_profile(raw_text: str) -> Profile:
     summary_section = extract_section(raw_text, "Summary", "Experience")
     summary = summary_section.strip() if summary_section else ""
     
-    # Extract contact info
+    # Extract contact info using pythonic patterns
     contact = {}
-    email_match = re.search(r"([\w\.-]+@[\w\.-]+\.\w+)", raw_text)
-    if email_match:
+    if email_match := re.search(r"([\w\.-]+@[\w\.-]+\.\w+)", raw_text):
         contact['email'] = email_match.group(1)
-    linkedin_match = re.search(r"www\.linkedin\.com/in/([\w-]+)", raw_text)
-    if linkedin_match:
+    if linkedin_match := re.search(r"www\.linkedin\.com/in/([\w-]+)", raw_text):
         contact['linkedin'] = f"linkedin.com/in/{linkedin_match.group(1)}"
-    website_match = re.search(r"([\w-]+\.ai) \(Company\)", raw_text)
-    if website_match:
+    if website_match := re.search(r"([\w-]+\.ai) \(Company\)", raw_text):
         contact['company_website'] = website_match.group(1)
     
     # Extract top skills
@@ -117,7 +111,9 @@ def parse_profile(raw_text: str) -> Profile:
     )
 
 
-def _parse_experiences_section(text: str) -> List[Experience]:
+def _parse_experiences_section(
+    text: str  # Full LinkedIn profile text
+) -> List[Experience]:  # List of parsed experiences
     """Parse work experience section."""
     exp_section = extract_section(text, "Experience", "Education")
     experiences = []
@@ -149,7 +145,9 @@ def _parse_experiences_section(text: str) -> List[Experience]:
     return experiences
 
 
-def _parse_education_section(text: str) -> List[Education]:
+def _parse_education_section(
+    text: str  # Full LinkedIn profile text
+) -> List[Education]:  # List of parsed education entries
     """Parse education section."""
     edu_section = extract_section(text, "Education", "Page")
     education = []

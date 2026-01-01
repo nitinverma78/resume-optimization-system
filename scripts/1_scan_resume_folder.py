@@ -30,17 +30,11 @@ class FileInventory(BaseModel):
     files: List[FileInfo]
 
 
-def scan_folder(folder_path: Path, recursive: bool = True) -> List[FileInfo]:
-    """
-    Scan a folder and gather file information.
-    
-    Args:
-        folder_path: Path to folder to scan
-        recursive: Whether to scan subdirectories
-        
-    Returns:
-        List of FileInfo objects
-    """
+def scan_folder(
+    folder_path: Path,  # Path to folder to scan
+    recursive: bool = True  # Whether to scan subdirectories
+) -> List[FileInfo]:  # List of FileInfo objects
+    """Scan a folder and gather file information."""
     files = []
     
     if recursive:

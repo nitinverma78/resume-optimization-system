@@ -26,7 +26,9 @@ class ClassifiedFiles(BaseModel):
     other: List[Dict]
 
 
-def extract_text_from_pdf(file_path: Path) -> str:
+def extract_text_from_pdf(
+    file_path: Path  # Path to PDF file
+) -> str:  # Extracted text in lowercase
     """Extract text from PDF."""
     try:
         doc = pymupdf.open(file_path)
@@ -40,7 +42,9 @@ def extract_text_from_pdf(file_path: Path) -> str:
         return ""
 
 
-def extract_text_from_docx(file_path: Path) -> str:
+def extract_text_from_docx(
+    file_path: Path  # Path to DOCX file
+) -> str:  # Extracted text in lowercase
     """Extract text from DOCX file."""
     try:
         doc = Document(file_path)
@@ -90,11 +94,11 @@ def extract_text_from_pptx(file_path: Path) -> str:
         return ""
 
 
-def is_user_document(text: str, filename: str) -> bool:
-    """
-    Check if document belongs to user.
-    SIMPLIFIED: Just having "Nitin Verma" in content OR filename is enough.
-    """
+def is_user_document(
+    text: str,       # Document text content (lowercase)
+    filename: str    # Document filename
+) -> bool:  # True if document belongs to user
+    """Check if document belongs to user (Nitin Verma in content OR filename)."""
     # Check filename
     filename_lower = filename.lower()
     has_name_in_filename = bool(re.search(r'nitin.*verma|nitinverma', filename_lower))
@@ -106,7 +110,9 @@ def is_user_document(text: str, filename: str) -> bool:
     return has_name_in_filename or has_name_in_content
 
 
-def is_cover_letter(text: str) -> bool:
+def is_cover_letter(
+    text: str  # Document text content (lowercase)
+) -> bool:  # True if document contains cover letter indicators
     """Determine if document contains a cover letter."""
     cl_indicators = [
         r'dear\s+(?:hiring|recruiter|manager|team)',
@@ -126,11 +132,10 @@ def is_cover_letter(text: str) -> bool:
     return matches >= 1
 
 
-def is_resume(text: str) -> bool:
-    """
-    Determine if document contains a resume using STRICT pattern matching.
-    Looks for actual resume structure, not just keywords.
-    """
+def is_resume(
+    text: str  # Document text content (lowercase)
+) -> bool:  # True if document has resume structure
+    """Determine if document contains a resume using STRICT pattern matching."""
     # Check for resume section keywords
     resume_sections = [
         r'\bexperience\b',
@@ -170,7 +175,10 @@ def is_resume(text: str) -> bool:
     return section_count >= 3 and pattern_count >= 2
 
 
-def is_presentation(text: str, filename: str) -> bool:
+def is_presentation(
+    text: str,      # Document text content (lowercase)
+    filename: str   # Document filename
+) -> bool:  # True if document is a presentation
     """Determine if document is a presentation (not a resume)."""
     # For PPTX files specifically
     if filename.lower().endswith(('.ppt', '.pptx')):
@@ -290,8 +298,10 @@ def classify_file_by_content(file_info: Dict) -> Tuple[str, str]:
         return 'user_resume', 'user\'s document (structure unclear, defaulting to resume)'
 
 
-def classify_files_from_inventory(inventory_path: Path) -> ClassifiedFiles:
-    """Classify all files from the inventory using content analysis."""
+def classify_files_from_inventory(
+    inventory_path: Path  # Path to file_inventory.json
+) -> ClassifiedFiles:  # ClassifiedFiles object with categorized files
+    """Classify all files from inventory using content analysis."""
     with open(inventory_path, 'r', encoding='utf-8') as f:
         inventory = json.load(f)
     

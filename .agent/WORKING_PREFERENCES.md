@@ -204,6 +204,149 @@ category = 'resume' if has_sections else 'other'
 - **[fast.ai style guide](https://docs.fast.ai/dev/style.html)** - Primary reference for this project
 <!-- TODO: Add your other repo references -->
 
+---
+
+## Advanced Python Patterns (from Fast.ai)
+
+These are **standard Python practices** (not fastai-specific) that fastai uses exceptionally well.
+
+### 1. Inline Parameter Documentation
+```python
+def show_batch(
+    x,           # Input(s) in the batch
+    y,           # Target(s) in the batch  
+    samples,     # List of (x, y) pairs
+    max_n=9,     # Maximum number of samples to show
+    **kwargs
+):
+    """Show batch data."""
+```
+
+**Why:** Comments + type hints = self-documenting code
+
+### 2. Class Attribute Defaults
+```python
+class Classifier:
+    # Multiple related defaults on one line
+    default_model,use_cuda,batch_size = 'resnet', True, 64
+    
+    def __init__(self, model=None, device=None):
+        self.model = model or self.default_model
+```
+
+**Why:** Configuration visible at class level, easy to override
+
+### 3. Delegation Pattern
+```python
+class DataFrameWrapper:
+    def __init__(self, df):
+        self.items = df
+    
+    # Delegate missing attributes to wrapped object
+    def __getattr__(self, name):
+        return getattr(self.items, name)
+```
+
+**Why:** Transparent wrapping without boilerplate forwarding methods
+
+### 4. Layered Abstraction via Inheritance
+```python
+# Base transform
+class Transform:
+    def setup(self, items): pass
+    def __call__(self, item): return item
+
+# Specialized transform  
+class Normalize(Transform):
+    def __init__(self, mean, std): self.mean,self.std = mean,std
+    def __call__(self, x): return (x - self.mean) / self.std
+
+# Domain-specific
+class ImageNormalize(Normalize):
+    def __init__(self): super().__init__(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
+```
+
+**Why:** Each layer adds specific capability, composable
+
+### 5. Functional Composition
+```python
+from functools import partial, reduce
+
+# Lambda factories for parameterized functions
+def get_scaler(factor): return lambda x: x * factor
+scale_2x = get_scaler(2)
+
+# Compose pipeline
+def compose(*funcs): return reduce(lambda f,g: lambda x: f(g(x)), funcs)
+pipeline = compose(normalize, resize, augment)
+
+# Partial application for currying
+process = partial(transform_data, mean=0.5, std=0.2)
+```
+
+**Why:** Declarative, reusable, testable transformations
+
+### 6. Compact Property Definitions
+```python
+class BoundingBox:
+    def __init__(self, x1,y1,x2,y2): self.x1,self.y1,self.x2,self.y2 = x1,y1,x2,y2
+    
+    # One-line properties for simple getters
+    @property
+    def width(self): return self.x2 - self.x1
+    @property  
+    def height(self): return self.y2 - self.y1
+    @property
+    def area(self): return self.width * self.height
+```
+
+**Why:** Fits on screen, reduces scrolling
+
+### 7. Pythonic Conditionals
+```python
+# Ternary for assignment
+result = process_data(x) if x is not None else default_value
+
+# Inline conditionals for setup
+if not inplace: df = df.copy()
+if normalize: data = (data - mean) / std
+
+# Generator with next() for find-first
+best_match = next((item for item in items if item.score > threshold), None)
+
+# Conditional list building
+enabled_features = [f for f in all_features if config.get(f.name, False)]
+```
+
+**Why:** Concise, readable, idiomatic Python
+
+### 8. Pipeline/Transform Pattern
+```python
+class Pipeline:
+    def __init__(self, *transforms): self.tfms = transforms
+    def __call__(self, x): return reduce(lambda val,tfm: tfm(val), self.tfms, x)
+    def setup(self, data): [tfm.setup(data) for tfm in self.tfms]
+
+# Usage
+preprocess = Pipeline(
+    LoadImage(),
+    Resize(224),
+    Normalize(mean=[0.5], std=[0.5])
+)
+```
+
+**Why:** Composable, testable, declarative
+
+---
+
+**When to Apply:**
+- ✅ Use these patterns when they clarify intent
+- ✅ Layered abstraction for reusable components  
+- ✅ Inline docs for complex function signatures
+- ⚠️ Don't force patterns where simple code is clearer
+
+---
+
 ### Function Structure
 ```python
 def function_name(param: Type) -> ReturnType:
