@@ -33,8 +33,16 @@ resume-optimization-system/
 │       ├── source-resumes/
 │       └── notes.md
 ├── scripts/                   # Utility scripts
-│   ├── parse_linkedin_pdf.py
-│   └── create_profile_db.py
+├── scripts/                   # Utility scripts
+│   ├── 1_scan_resume_folder.py
+│   ├── 2_classify_files.py
+│   ├── 2a_verify_classifications.py         # Optional validation
+│   ├── 2b_check_misclassified.py            # Optional validation
+│   ├── 2c_analyze_file_content.py           # Optional validation
+│   ├── 2d_debug_classification_patterns.py  # Optional validation
+│   ├── 3_generate_classification_report.py
+│   ├── 4_parse_linkedin_pdf.py
+│   └── 5_create_profile_db.py
 ├── pyproject.toml            # Project dependencies
 └── README.md                 # This file
 ```
@@ -62,10 +70,10 @@ uv run python3 --version
 
 ```bash
 # Parse LinkedIn PDF
-uv run python3 scripts/parse_linkedin_pdf.py
+uv run python3 scripts/4_parse_linkedin_pdf.py
 
 # Create structured profile database
-uv run python3 scripts/create_profile_db.py
+uv run python3 scripts/5_create_profile_db.py
 ```
 
 ## Current Status

@@ -39,16 +39,44 @@ python scripts/2_classify_files.py
 - Default: `"YOUR_NAME"` (you must set this)
 - Output: `data/classified_files.json`
 
+### Validation (Optional)
+If classification results seem wrong, run these in order:
+
+1. **Verify Classifications (Quick Check)**
+   ```bash
+   python scripts/2a_verify_classifications.py
+   ```
+2. **Check Misclassified Categories**
+   ```bash
+   python scripts/2b_check_misclassified.py
+   ```
+3. **Analyze Specific File Content**
+   ```bash
+   python scripts/2c_analyze_file_content.py
+   ```
+   *Edit the script first to add the filename you want to check.*
+4. **Debug Regex Patterns (Deep Dive)**
+   ```bash
+   python scripts/2d_debug_classification_patterns.py
+   ```
+
 ### Step 3: Generate Report
 ```bash
-python scripts/generate_classification_report.py
+python scripts/3_generate_classification_report.py
 ```
 - Uses: `data/classified_files.json`
 - Output: `data/classification_report.md`
 
-### Step 4: Create Profile Database
+### Step 4: Parse LinkedIn PDF
 ```bash
-python scripts/create_profile_db.py
+python scripts/4_parse_linkedin_pdf.py
+```
+- Uses: `LINKEDIN_PDF` (default: `profile-data/MyLinkedInProfile.pdf`)
+- Output: `profile-data/linkedin-profile-parsed.json`
+
+### Step 5: Create Profile Database
+```bash
+python scripts/5_create_profile_db.py
 ```
 - Uses: `USER_NAME` → `"John Doe"`
 - Uses: LinkedIn PDF (default: `profile-data/MyLinkedInProfile.pdf`)
@@ -106,8 +134,9 @@ export RESUME_FOLDER="$HOME/Downloads/MyResumes"
 # Run complete pipeline
 python scripts/1_scan_resume_folder.py
 python scripts/2_classify_files.py
-python scripts/generate_classification_report.py
-python scripts/create_profile_db.py
+python scripts/3_generate_classification_report.py
+python scripts/4_parse_linkedin_pdf.py
+python scripts/5_create_profile_db.py
 
 # Before going public, run security audit
 YOUR_NAME="Your Full Name"

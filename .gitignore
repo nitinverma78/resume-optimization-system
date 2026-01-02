@@ -189,10 +189,12 @@ $RECYCLE.BIN/
 
 # Personal diagnostic scripts (contain Nitin's specific filenames)
 # These are dev/debug tools with hardcoded personal data
-scripts/analyze_specific_files.py
-scripts/check_misclassified.py
-scripts/debug_patterns.py
-scripts/verify_fixes.py
+# Personal diagnostic scripts (contain Nitin's specific filenames)
+# These are dev/debug tools with hardcoded personal data
+scripts/2a_verify_classifications.py
+scripts/2b_check_misclassified.py
+scripts/2c_analyze_file_content.py
+scripts/2d_debug_classification_patterns.py
 
 # Logs
 *.log
