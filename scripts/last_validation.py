@@ -7,6 +7,7 @@ Ensures all scripts execute successfully and data flows correctly.
 
 import subprocess
 import sys
+import os
 import time
 from pathlib import Path
 
@@ -45,7 +46,8 @@ def run_script(script_name):
         cmd = [sys.executable, str(script_path)]
         
         # Stream output to console so user sees progress
-        result = subprocess.run(cmd, check=False)
+        # Run with input disabled to prevent interactive prompts from hanging
+        result = subprocess.run(cmd, check=False, stdin=subprocess.DEVNULL)
         
         duration = time.time() - start_time
         
@@ -63,6 +65,37 @@ def run_script(script_name):
 def main():
     print("🚀 Starting End-to-End Pipeline Validation...")
     print(f"📂 Scripts Directory: {SCRIPTS_DIR}")
+    
+    # Unset legacy environment variables that might interfere with new paths
+    # (Scrubbing these ensures we rely on defaults OR the new .env values below)
+    legacy_vars = [
+        'CLASSIFIED_FILE', 'INVENTORY_FILE', 'REPORT_FILE', 'RESUME_CONTENT_DB',
+        'LINKEDIN_PDF', 'LINKEDIN_JSON', 'PROFILE_JSON', 'PROFILE_MD'
+    ]
+    for var in legacy_vars:
+        if var in os.environ:
+            print(f"⚠️  Unsetting legacy env var: {var}={os.environ.pop(var)}")
+
+    # Load configuration from .env
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        print(f"\n📄 Loading configuration from {env_path}...")
+        with open(env_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                try:
+                    key, value = line.split("=", 1)
+                    # Remove quotes if present
+                    value = value.strip('"').strip("'")
+                    os.environ[key] = value
+                    if key in ['USER_NAME', 'USER_EMAIL', 'RESUME_FOLDER']:
+                        print(f"   ✅ Set {key}='{value}'")
+                except ValueError:
+                    pass
+    else:
+        print("\n⚠️  No .env file found. Using script defaults.")
     
     failed_steps = []
     

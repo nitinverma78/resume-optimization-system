@@ -13,17 +13,18 @@ from lib_profile_steps_5_6 import parse_profile, Profile
 
 
 def main(
-    linkedin_json: Path = Path(__file__).parent.parent / "profile-data" / "linkedin-profile-parsed.json",  # Input LinkedIn JSON
-    output_json: Path = Path(__file__).parent.parent / "profile-data" / "profile-structured.json",  # Output structured
+    parsed_json_file: Path = Path(__file__).parent.parent / "data" / "supply" / "profile_data" / "linkedin-profile-parsed.json",
+    config_file: Path = Path(__file__).parent.parent / "data" / "supply" / "profile_data" / "parsing_config.json",
+    output_file: Path = Path(__file__).parent.parent / "data" / "supply" / "profile_data" / "profile-structured.json",  # Output structured
     user_name: str = None  # User's full name for parsing (default: USER_NAME env var)
 ) -> Profile:  # Structured Profile object
     """Main execution."""
     # Allow environment variables to override defaults
-    linkedin_json = Path(os.getenv('LINKEDIN_JSON', str(linkedin_json)))
-    output_json = Path(os.getenv('PROFILE_JSON', str(output_json)))
+    parsed_json_file = Path(os.getenv('LINKEDIN_JSON', str(parsed_json_file)))
+    output_file = Path(os.getenv('PROFILE_JSON', str(output_file)))
     user_name = os.getenv('USER_NAME', user_name)  # Get from env if not provided
     
-    with open(linkedin_json, 'r', encoding='utf-8') as f:
+    with open(parsed_json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
     print("Creating structured profile database...")
@@ -43,11 +44,11 @@ def main(
     }
     
     # Save structured profile
-    output_json.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_json, 'w', encoding='utf-8') as f:
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(profile_dict, f, indent=2, ensure_ascii=False)
     
-    print(f"✓ Structured profile saved to: {output_json}")
+    print(f"✓ Structured profile saved to: {output_file}")
     print(f"\n=== Profile Summary ===")
     print(f"Name: {profile.name}")
     print(f"Headline: {profile.headline[:100]}...")

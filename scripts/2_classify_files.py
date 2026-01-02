@@ -106,25 +106,33 @@ def extract_text_from_pptx(file_path: Path) -> str:
 def is_user_document(
     text: str,       # Document text content (lowercase)
     filename: str,   # Document filename  
-    user_name: str = None  # User's full name (default: USER_NAME env var)
+    user_name: str = None,  # User's full name (default: USER_NAME env var)
+    user_email: str = None  # User's email (default: USER_EMAIL env var)
 ) -> bool:  # True if document belongs to user
-    """Check if document belongs to user (name in content OR filename)."""
-    # Get user name from env or parameter
+    """Check if document belongs to user (name in content/filename OR email in content)."""
+    # Get user name/email from env or parameters
     if user_name is None:
-        user_name = os.getenv('USER_NAME', 'YOUR_NAME')  # Generic placeholder
-    
-    # Normalize for search
+        user_name = os.getenv('USER_NAME', 'YOUR_NAME')
+    if user_email is None:
+        user_email = os.getenv('USER_EMAIL')
+
+    # Normalize name for search
     user_lower = user_name.lower()
     user_compact = user_lower.replace(' ', '')
     
-    # Check filename
+    # Check filename for name
     filename_lower = filename.lower()
     has_name_in_filename = user_compact in filename_lower.replace(' ', '')
     
-    # Check content
+    # Check content for name
     has_name_in_content = user_lower in text
     
-    return has_name_in_filename or has_name_in_content
+    # Check content for email
+    has_email_in_content = False
+    if user_email:
+        has_email_in_content = user_email.lower() in text
+    
+    return has_name_in_filename or has_name_in_content or has_email_in_content
 
 
 def is_cover_letter(
@@ -241,7 +249,7 @@ def is_other_persons_resume(text: str) -> bool:
     return False
 
 
-def classify_file_by_content(file_info: Dict) -> Tuple[str, str]:
+def classify_file_by_content(file_info: Dict, user_name: str = None, user_email: str = None) -> Tuple[str, str]:
     """Classify a file by analyzing its content."""
     if file_info['is_directory']:
         return 'other', 'directory'
@@ -278,8 +286,8 @@ def classify_file_by_content(file_info: Dict) -> Tuple[str, str]:
     if is_other_persons_resume(text):
         return 'other_resume', 'identified as another person\'s resume'
     
-    # Check if it belongs to user (SIMPLIFIED: just need name)
-    is_users = is_user_document(text, name)
+    # Check if it belongs to user
+    is_users = is_user_document(text, name, user_name, user_email)
     
     if not is_users:
         # Not user's document - check if it's a generic resume/CV
@@ -316,7 +324,9 @@ def classify_file_by_content(file_info: Dict) -> Tuple[str, str]:
 
 
 def classify_files_from_inventory(
-    inventory_path: Path  # Path to file_inventory.json
+    inventory_path: Path,  # Path to file_inventory.json
+    user_name: str = None,
+    user_email: str = None
 ) -> ClassifiedFiles:  # ClassifiedFiles object with categorized files
     """Classify all files from inventory using content analysis."""
     with open(inventory_path, 'r', encoding='utf-8') as f:
@@ -337,7 +347,7 @@ def classify_files_from_inventory(
         if idx % 20 == 0:
             print(f"  Processed {idx}/{len(inventory['files'])} files...")
         
-        category, reason = classify_file_by_content(file_info)
+        category, reason = classify_file_by_content(file_info, user_name, user_email)
         
         # Add reason to file info for debugging
         file_info['classification_reason'] = reason
@@ -354,15 +364,17 @@ def classify_files_from_inventory(
 
 
 def main(
-    inventory_file: Path = Path(__file__).parent.parent / "data" / "file_inventory.json",  # Input inventory
-    output_file: Path = Path(__file__).parent.parent / "data" / "classified_files.json",  # Output classified
-    user_name: str = None  # User's full name for ownership detection (default: USER_NAME env var)
+    inventory_file: Path = Path(__file__).parent.parent / "data" / "supply" / "1_file_inventory.json",  # Input inventory
+    output_file: Path = Path(__file__).parent.parent / "data" / "supply" / "2_file_inventory.json",  # Output classified
+    user_name: str = None,  # User's full name for ownership detection (default: USER_NAME env var)
+    user_email: str = None  # User's email for ownership detection (default: USER_EMAIL env var)
 ):
     """Main execution."""
     # Allow environment variables to override defaults
     inventory_file = Path(os.getenv('INVENTORY_FILE', str(inventory_file)))
     output_file = Path(os.getenv('CLASSIFIED_FILE', str(output_file)))
     user_name = os.getenv('USER_NAME', user_name)  # Get from env if not provided
+    user_email = os.getenv('USER_EMAIL', user_email)
     
     if not inventory_file.exists():
         print(f"Error: File inventory not found at {inventory_file}")
@@ -372,7 +384,7 @@ def main(
     print("Classifying files using FINAL IMPROVED CONTENT ANALYSIS...")
     print("Now with: PPTX support, old .doc support, better ownership detection\n")
     
-    classified = classify_files_from_inventory(inventory_file)
+    classified = classify_files_from_inventory(inventory_file, user_name, user_email)
     
     # Save classification results
     with open(output_file, 'w', encoding='utf-8') as f:

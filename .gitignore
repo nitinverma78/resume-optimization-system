@@ -38,8 +38,8 @@ linkedin-profile.md
 
 # Environment variables (may contain paths)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # ============================================
 # PYTHON

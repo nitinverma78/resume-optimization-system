@@ -107,7 +107,7 @@ def scan_folder(
 
 def main(
     resume_folder: Path = Path.home() / "Downloads" / "MyResumes",  # Folder to scan
-    output_file: Path = Path(__file__).parent.parent / "data" / "file_inventory.json"  # Output JSON
+    output_file: Path = Path(__file__).parent.parent / "data" / "supply" / "1_file_inventory.json"  # Output JSON
 ):
     """Main execution."""
     # Allow environment variables to override defaults

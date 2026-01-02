@@ -34,8 +34,8 @@ def parse_linkedin_pdf(pdf_path: Path) -> dict:
 
 
 def main(
-    pdf_path: Path = Path(__file__).parent.parent / "profile-data" / "MyLinkedInProfile.pdf",  # Input PDF
-    output_json: Path = None  # Output JSON (default: same dir as PDF)
+    pdf_path: Path = Path(__file__).parent.parent / "data" / "supply" / "profile_data" / "MyLinkedInProfile.pdf",
+    output_json: Path = Path(__file__).parent.parent / "data" / "supply" / "profile_data" / "linkedin-profile-parsed.json"
 ):
     """Main execution."""
     # Allow environment variables to override defaults

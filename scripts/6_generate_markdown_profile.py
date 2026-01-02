@@ -91,21 +91,21 @@ def render_markdown(profile: Profile) -> str:
 
 
 def main(
-    linkedin_json: Path = Path(__file__).parent.parent / "profile-data" / "linkedin-profile-parsed.json",
-    output_md: Path = Path(__file__).parent.parent / "profile-data" / "linkedin-profile.md",
+    structured_data_file: Path = Path(__file__).parent.parent / "data" / "supply" / "profile_data" / "linkedin-profile-parsed.json",
+    output_md_file: Path = Path(__file__).parent.parent / "data" / "supply" / "profile_data" / "linkedin-profile.md",
     user_name: str = None
 ):
     """Main execution."""
     # Environment variable overrides
-    linkedin_json = Path(os.getenv('LINKEDIN_JSON', str(linkedin_json)))
-    output_md = Path(os.getenv('PROFILE_MD', str(output_md)))
+    structured_data_file = Path(os.getenv('LINKEDIN_JSON', str(structured_data_file)))
+    output_md_file = Path(os.getenv('PROFILE_MD', str(output_md_file)))
     user_name = os.getenv('USER_NAME', user_name)
 
-    if not linkedin_json.exists():
-        print(f"Error: Source file not found: {linkedin_json}", file=sys.stderr)
+    if not structured_data_file.exists():
+        print(f"Error: Source file not found: {structured_data_file}", file=sys.stderr)
         return
 
-    with open(linkedin_json, 'r', encoding='utf-8') as f:
+    with open(structured_data_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
 
     print("Generating Markdown profile...")
@@ -113,10 +113,10 @@ def main(
     
     md_content = render_markdown(profile)
     
-    with open(output_md, 'w', encoding='utf-8') as f:
+    with open(output_md_file, 'w', encoding='utf-8') as f:
         f.write(md_content)
         
-    print(f"✓ Markdown profile saved to: {output_md}")
+    print(f"✓ Markdown profile saved to: {output_md_file}")
 
 if __name__ == "__main__":
     main()
