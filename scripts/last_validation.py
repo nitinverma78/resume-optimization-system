@@ -1,120 +1,89 @@
 #!/usr/bin/env python3
-"""
-Last Validation Script
-Runs the entire Resume Optimization System pipeline from Step 0 to Step 10.
-Ensures all scripts execute successfully and data flows correctly.
-"""
-
-import subprocess
-import sys
-import os
-import time
+"""Last Validation Script - Runs entire pipeline from Step 0 to Step 10."""
+import subprocess,sys,os,time
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).parent
 
-# Define the pipeline order
 PIPELINE = [
-    "0_setup.py",
-    "1_scan_resume_folder.py",
-    "2_classify_files.py",
-    "3_generate_classification_report.py",
-    "4_parse_linkedin_pdf.py",
-    "5_create_profile_db.py",
-    "6_generate_markdown_profile.py",
-    "7_discover_resume_sections.py",
-    "8_extract_resume_content.py",
-    "9_build_master_db.py",
-    "10_ingest_jds.py"
+    "0_setup.py", "1_scan_resume_folder.py", "2_classify_files.py",
+    "3_generate_classification_report.py", "4_parse_linkedin_pdf.py",
+    "5_create_profile_db.py", "6_generate_markdown_profile.py",
+    "7_discover_resume_sections.py", "8_extract_resume_content.py",
+    "9_build_master_db.py", "10_ingest_jds.py"
 ]
 
-def run_script(script_name):
+LEGACY_VARS = ['CLASSIFIED_FILE','INVENTORY_FILE','REPORT_FILE','RESUME_CONTENT_DB',
+               'LINKEDIN_PDF','LINKEDIN_JSON','PROFILE_JSON','PROFILE_MD']
+
+def run_script(name: str) -> bool:
     """Run a single script and check exit code."""
-    script_path = SCRIPTS_DIR / script_name
-    if not script_path.exists():
-        print(f"❌ [MISSING] {script_name}")
+    path = SCRIPTS_DIR / name
+    if not path.exists():
+        print(f"❌ [MISSING] {name}")
         return False
         
-    print(f"\n{'='*60}")
-    print(f"▶️  Running: {script_name}")
-    print(f"{'='*60}\n")
+    print(f"\n{'='*60}\n▶️  Running: {name}\n{'='*60}\n")
     
-    start_time = time.time()
+    t0 = time.time()
     try:
-        # Use sys.executable to ensure we use the same python env (e.g. uv)
-        # We assume dependencies are installed or we are in the right venv.
-        cmd = [sys.executable, str(script_path)]
+        r = subprocess.run([sys.executable, str(path)], check=False, stdin=subprocess.DEVNULL)
+        dt = time.time() - t0
         
-        # Stream output to console so user sees progress
-        # Run with input disabled to prevent interactive prompts from hanging
-        result = subprocess.run(cmd, check=False, stdin=subprocess.DEVNULL)
-        
-        duration = time.time() - start_time
-        
-        if result.returncode == 0:
-            print(f"\n✅ [PASS] {script_name} ({duration:.2f}s)")
+        if r.returncode == 0:
+            print(f"\n✅ [PASS] {name} ({dt:.2f}s)")
             return True
-        else:
-            print(f"\n❌ [FAIL] {script_name} (Exit Code: {result.returncode})")
-            return False
-            
+        print(f"\n❌ [FAIL] {name} (Exit Code: {r.returncode})")
+        return False
     except Exception as e:
-        print(f"\n❌ [ERROR] Failed to launch {script_name}: {e}")
+        print(f"\n❌ [ERROR] Failed to launch {name}: {e}")
         return False
 
-def main():
-    print("🚀 Starting End-to-End Pipeline Validation...")
-    print(f"📂 Scripts Directory: {SCRIPTS_DIR}")
-    
-    # Unset legacy environment variables that might interfere with new paths
-    # (Scrubbing these ensures we rely on defaults OR the new .env values below)
-    legacy_vars = [
-        'CLASSIFIED_FILE', 'INVENTORY_FILE', 'REPORT_FILE', 'RESUME_CONTENT_DB',
-        'LINKEDIN_PDF', 'LINKEDIN_JSON', 'PROFILE_JSON', 'PROFILE_MD'
-    ]
-    for var in legacy_vars:
-        if var in os.environ:
-            print(f"⚠️  Unsetting legacy env var: {var}={os.environ.pop(var)}")
-
-    # Load configuration from .env
+def load_env():
+    """Load .env file into environment."""
     env_path = Path(__file__).parent.parent / ".env"
     if env_path.exists():
         print(f"\n📄 Loading configuration from {env_path}...")
         with open(env_path, "r") as f:
             for line in f:
                 line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
+                if not line or line.startswith("#"): continue
                 try:
-                    key, value = line.split("=", 1)
-                    # Remove quotes if present
-                    value = value.strip('"').strip("'")
-                    os.environ[key] = value
-                    if key in ['USER_NAME', 'USER_EMAIL', 'RESUME_FOLDER']:
-                        print(f"   ✅ Set {key}='{value}'")
-                except ValueError:
-                    pass
+                    k, v = line.split("=", 1)
+                    v = v.strip('"').strip("'")
+                    os.environ[k] = v
+                    if k in ['USER_NAME', 'USER_EMAIL', 'RESUME_FOLDER']:
+                        print(f"   ✅ Set {k}='{v}'")
+                except ValueError: pass
     else:
         print("\n⚠️  No .env file found. Using script defaults.")
+
+def main():
+    print("🚀 Starting End-to-End Pipeline Validation...")
+    print(f"📂 Scripts Directory: {SCRIPTS_DIR}")
     
-    failed_steps = []
+    # Scrub legacy vars
+    for v in LEGACY_VARS:
+        if v in os.environ:
+            print(f"⚠️  Unsetting legacy env var: {v}={os.environ.pop(v)}")
+
+    load_env()
     
-    for script in PIPELINE:
-        success = run_script(script)
-        if not success:
-            failed_steps.append(script)
-            print(f"\n🛑 Pipeline halted at {script}. Fix the error and re-run.")
+    failed = []
+    for s in PIPELINE:
+        if not run_script(s):
+            failed.append(s)
+            print(f"\n🛑 Pipeline halted at {s}. Fix the error and re-run.")
             break
             
     print(f"\n{'='*60}")
-    if not failed_steps:
+    if not failed:
         print("🎉 SUCCESS! All steps completed successfully.")
         print("   The Resume Optimization System is fully operational.")
     else:
-        print(f"⚠️  FAILED. The following step failed: {failed_steps[0]}")
+        print(f"⚠️  FAILED. The following step failed: {failed[0]}")
     print(f"{'='*60}\n")
     
-    sys.exit(1 if failed_steps else 0)
+    sys.exit(1 if failed else 0)
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

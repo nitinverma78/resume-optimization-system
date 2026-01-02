@@ -1,60 +1,45 @@
 #!/usr/bin/env python3
-"""
-Setup script for first-time users.
-Creates necessary directories and validates environment.
-"""
-import os
+"""Setup script for first-time users. Creates directories and validates environment."""
+import os,sys
 from pathlib import Path
 
 def setup():
     """Initialize the resume optimization system."""
     print("🚀 Setting up Resume Optimization System...\n")
     
-    # Create directories
-    dirs = [
-        "data",
-        "data/supply",
-        "data/demand",
-        "data/supply/profile_data",
-        "examples"
-    ]
+    # Create directories - aligned for clarity
+    dirs = ["data", "data/supply", "data/demand", "data/supply/profile_data", "examples"]
     for d in dirs:
-        path = Path(d)
-        path.mkdir(exist_ok=True)
-        (path / '.gitkeep').touch()
+        p = Path(d)
+        p.mkdir(exist_ok=True)
+        (p / '.gitkeep').touch()
         print(f"✓ Created {d}/ (gitignored - your data stays private)")
     
     print("\n📁 Directory Structure:")
-    print("  data/          - Processing outputs (private)")
+    print("  data/                      - Processing outputs (private)")
     print("  data/supply/profile_data/  - Your LinkedIn profile (private)")
-    print("  examples/      - Sample data for testing (public)")
+    print("  examples/                  - Sample data for testing (public)")
     
     print("\n🔐 Privacy:")
     print("Please enter your details to configure the system (or press Enter to skip):")
     
     # Only prompt if interactive
-    import sys
     if sys.stdin.isatty():
-        user_name = input("Full Name: ").strip()
-        user_email = input("Email Address: ").strip()
-        resume_folder = input("Path to Resume Folder: ").strip()
+        name  = input("Full Name: ").strip()
+        email = input("Email Address: ").strip()
+        folder = input("Path to Resume Folder: ").strip()
     else:
         print("  (Non-interactive mode detected using defaults)")
-        user_name = ""
-        user_email = ""
-        resume_folder = ""
+        name,email,folder = "","",""
     
-    env_content = ""
-    if user_name:
-        env_content += f'USER_NAME="{user_name}"\n'
-    if user_email:
-        env_content += f'USER_EMAIL="{user_email}"\n'
-    if resume_folder:
-        env_content += f'RESUME_FOLDER="{resume_folder}"\n'
+    # Build .env content
+    env = ""
+    if name:   env += f'USER_NAME="{name}"\n'
+    if email:  env += f'USER_EMAIL="{email}"\n'
+    if folder: env += f'RESUME_FOLDER="{folder}"\n'
 
-    if env_content:
-        with open(".env", "w") as f:
-            f.write(env_content)
+    if env:
+        with open(".env", "w") as f: f.write(env)
         print("\n✓ .env file created with your details.")
     else:
         print("\nNo details provided. Skipping .env file creation.")
@@ -74,5 +59,4 @@ def setup():
     
     print("\n✅ Setup complete! Your data is safe and private.")
 
-if __name__ == "__main__":
-    setup()
+if __name__ == "__main__": setup()

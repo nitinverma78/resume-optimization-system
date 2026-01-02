@@ -1,167 +1,123 @@
 #!/usr/bin/env python3
-"""
-Phase 1.1: File Scanner
-Scans a folder and creates a complete inventory of all files with metadata.
-"""
-
-import json, os
+"""Phase 1.1: File Scanner - Scans folder and creates complete file inventory."""
+import json,os
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict
+from typing import List,Dict,NewType
 from pydantic import BaseModel
 
-# Type alias for file information list
+# Type aliases
+FilePath = NewType('FilePath', Path)
 FileList = List['FileInfo']
 
-
 class FileInfo(BaseModel):
-    """Model for file information."""    
-    class Config:
-        frozen = True  # Immutable
-    
+    """File metadata model."""
+    class Config: frozen = True
     path: str
     name: str
-    extension: str
-    size_bytes: int
-    modified_date: str
-    is_directory: bool
-
+    ext: str           # extension
+    sz: int            # size_bytes
+    modified: str      # modified_date
+    is_dir: bool       # is_directory
 
 class FileInventory(BaseModel):
-    """Model for complete file inventory."""    
-    class Config:
-        frozen = True  # Immutable
-    
+    """Complete file inventory model."""
+    class Config: frozen = True
     scan_date: str
-    source_folder: str
-    total_files: int
-    total_directories: int
+    src_folder: str    # source_folder
+    n_files: int       # total_files
+    n_dirs: int        # total_directories
     files: FileList
 
-
 def scan_folder(
-    folder_path: Path,  # Path to folder to scan
-    recursive: bool = True  # Whether to scan subdirectories
-) -> FileList:  # List of FileInfo objects
-    """Scan a folder and gather file information."""
+    folder: Path,        # Path to folder to scan
+    recursive: bool=True # Whether to scan subdirectories
+) -> FileList:           # List of FileInfo objects
+    """Scan folder and gather file information."""
     files = []
     
+    def add_file(fp: Path, is_dir: bool=False):
+        try:
+            st = fp.stat()
+            files.append(FileInfo(
+                path=str(fp), name=fp.name,
+                ext=fp.suffix.lower() if not is_dir else "",
+                sz=st.st_size if not is_dir else 0,
+                modified=datetime.fromtimestamp(st.st_mtime).isoformat(),
+                is_dir=is_dir
+            ))
+        except (OSError, PermissionError) as e:
+            print(f"Warning: Could not access {fp}: {e}")
+    
+    def skip(name): return name.startswith('.') or name.startswith('~$')
+    
     if recursive:
-        # Walk through all subdirectories
-        for root, dirs, filenames in os.walk(folder_path):
-            for filename in filenames:
-                # Skip hidden files and system files
-                if filename.startswith('.') or filename.startswith('~$'):
-                    continue
-                    
-                file_path = Path(root) / filename
-                try:
-                    stat = file_path.stat()
-                    files.append(FileInfo(
-                        path=str(file_path), name=filename,
-                        extension=file_path.suffix.lower(),
-                        size_bytes=stat.st_size,
-                        modified_date=datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                        is_directory=False
-                    ))
-                except (OSError, PermissionError) as e:
-                    print(f"Warning: Could not access {file_path}: {e}")
-                    
-            # Also track directories
-            for dirname in dirs:
-                if dirname.startswith('.'):
-                    continue
-                dir_path = Path(root) / dirname
-                try:
-                    stat = dir_path.stat()
-                    files.append(FileInfo(
-                        path=str(dir_path),
-                        name=dirname,
-                        extension="",
-                        size_bytes=0,
-                        modified_date=datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                        is_directory=True
-                    ))
-                except (OSError, PermissionError) as e:
-                    print(f"Warning: Could not access {dir_path}: {e}")
+        for root, dirs, fnames in os.walk(folder):
+            for fn in fnames:
+                if skip(fn): continue
+                add_file(Path(root)/fn, is_dir=False)
+            for dn in dirs:
+                if skip(dn): continue
+                add_file(Path(root)/dn, is_dir=True)
     else:
-        # Only scan top level
-        for item in folder_path.iterdir():
-            if item.name.startswith('.') or item.name.startswith('~$'):
-                continue
-            try:
-                stat = item.stat()
-                files.append(FileInfo(
-                    path=str(item),
-                    name=item.name,
-                    extension=item.suffix.lower() if item.is_file() else "",
-                    size_bytes=stat.st_size if item.is_file() else 0,
-                    modified_date=datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    is_directory=item.is_dir()
-                ))
-            except (OSError, PermissionError) as e:
-                print(f"Warning: Could not access {item}: {e}")
+        for item in folder.iterdir():
+            if skip(item.name): continue
+            add_file(item, is_dir=item.is_dir())
     
     return files
 
-
 def main(
-    resume_folder: Path = Path.home() / "Downloads" / "MyResumes",  # Folder to scan
-    output_file: Path = Path(__file__).parent.parent / "data" / "supply" / "1_file_inventory.json"  # Output JSON
+    folder: Path = Path.home()/"Downloads"/"MyResumes",  # Folder to scan
+    out: Path = Path(__file__).parent.parent/"data"/"supply"/"1_file_inventory.json"  # Output JSON
 ):
     """Main execution."""
-    # Allow environment variables to override defaults
-    resume_folder = Path(os.getenv('RESUME_FOLDER', str(resume_folder)))
-    output_file = Path(os.getenv('OUTPUT_FILE', str(output_file)))
+    # Allow env vars to override defaults
+    folder = Path(os.getenv('RESUME_FOLDER', str(folder)))
+    out    = Path(os.getenv('OUTPUT_FILE', str(out)))
     
-    # Validate folder exists
-    if not resume_folder.exists():
-        print(f"Error: Folder not found: {resume_folder}")
+    if not folder.exists():
+        print(f"Error: Folder not found: {folder}")
         print("Please provide a valid folder path.")
         return
     
-    print(f"Scanning folder: {resume_folder}")
+    print(f"Scanning folder: {folder}")
     print("This may take a moment for large folders...\n")
     
-    # Scan folder
-    files = scan_folder(resume_folder, recursive=True)
+    files = scan_folder(folder, recursive=True)
     
     # Separate files and directories
-    file_list = [f for f in files if not f.is_directory]
-    dir_list = [f for f in files if f.is_directory]
+    file_list = [f for f in files if not f.is_dir]
+    dir_list  = [f for f in files if f.is_dir]
     
     # Create inventory
-    inventory = FileInventory(
+    inv = FileInventory(
         scan_date=datetime.now().isoformat(),
-        source_folder=str(resume_folder),
-        total_files=len(file_list), total_directories=len(dir_list),
+        src_folder=str(folder),
+        n_files=len(file_list), n_dirs=len(dir_list),
         files=files
     )
     
     # Save to JSON
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(inventory.model_dump(), f, indent=2, ensure_ascii=False)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, 'w', encoding='utf-8') as f:
+        json.dump(inv.model_dump(), f, indent=2, ensure_ascii=False)
     
-    # Print summary
     print(f"✓ Scan complete!")
     print(f"✓ Found {len(file_list)} files in {len(dir_list)} directories")
-    print(f"✓ Saved to: {output_file}\n")
+    print(f"✓ Saved to: {out}\n")
     
-    # Show file type breakdown
-    extensions = {}
-    for file in file_list:
-        ext = file.extension if file.extension else "(no extension)"
-        extensions[ext] = extensions.get(ext, 0) + 1
+    # File type breakdown
+    exts = {}
+    for f in file_list:
+        e = f.ext if f.ext else "(no extension)"
+        exts[e] = exts.get(e, 0) + 1
     
     print("File type breakdown:")
-    for ext, count in sorted(extensions.items(), key=lambda x: x[1], reverse=True):
-        print(f"  {ext}: {count} files")
+    for e, cnt in sorted(exts.items(), key=lambda x: x[1], reverse=True):
+        print(f"  {e}: {cnt} files")
     
-    # Show size summary
-    total_size = sum(f.size_bytes for f in file_list)
-    print(f"\nTotal size: {total_size / (1024*1024):.2f} MB")
+    # Size summary
+    total_sz = sum(f.sz for f in file_list)
+    print(f"\nTotal size: {total_sz / (1024*1024):.2f} MB")
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
