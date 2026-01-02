@@ -124,7 +124,18 @@ def is_pres(txt: str, fname: str) -> bool:
     pres_kw = sum(1 for p in PRES_PATTERNS if re.search(p, txt))
     return pres_kw >= 3 and not is_resume(txt)
 
-OTHER_NAMES = [r'patrick\s+moseley', r'russ\s+kasymov']
+# Load other people's names from config (git-ignored)
+def _load_other_names() -> List[str]:
+    cfg_path = Path(__file__).parent.parent / "config" / "classification_config.json"
+    if cfg_path.exists():
+        try:
+            with open(cfg_path, 'r') as f:
+                cfg = json.load(f)
+                return cfg.get('other_peoples_names', [])
+        except: pass
+    return []  # Empty list if no config
+
+OTHER_NAMES = _load_other_names()
 def is_other_resume(txt: str) -> bool:
     return any(re.search(p, txt) for p in OTHER_NAMES)
 

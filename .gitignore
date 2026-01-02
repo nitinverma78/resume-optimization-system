@@ -7,6 +7,8 @@ data/
 !data/.gitkeep
 profile-data/
 !profile-data/.gitkeep
+config/
+!config/.gitkeep
 # parsing_config.json contains personal company names/patterns -> ignore it
 # !profile-data/parsing_config.json  <-- REMOVED exclusion (so it IS ignored)
 
