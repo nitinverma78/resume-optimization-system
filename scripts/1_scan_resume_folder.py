@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 1.1: File Scanner - Scans folder and creates complete file inventory."""
+"""[Supply Discovery] Step 1: Scan folder and create complete file inventory."""
 import json,os
 from pathlib import Path
 from datetime import datetime
@@ -67,12 +67,12 @@ def scan_folder(
     return files
 
 def main(
-    folder: Path = Path.home()/"Downloads"/"MyResumes",  # Folder to scan
+    folder: Path = Path.home()/"Downloads"/"MyResumeResources",  # Folder to scan
     out: Path = Path(__file__).parent.parent/"data"/"supply"/"1_file_inventory.json"  # Output JSON
 ):
     """Main execution."""
-    # Allow env vars to override defaults
-    folder = Path(os.getenv('RESUME_FOLDER', str(folder)))
+    # Allow env vars to override defaults (expanduser handles ~)
+    folder = Path(os.path.expanduser(os.getenv('RESUME_FOLDER', str(folder))))
     out    = Path(os.getenv('OUTPUT_FILE', str(out)))
     
     if not folder.exists():

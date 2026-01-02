@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate clean Markdown CV/Profile from parsed LinkedIn data."""
+"""[Supply Public Profile] Step 9: Generate markdown profile from parsed data."""
 import json,os,sys,re
 from pathlib import Path
-from lib_profile_steps_5_6 import Profile, parse_profile
+from lib_profile import Profile, parse_profile
 
 def render_md(p: Profile) -> str:
     """Render Profile object to Markdown."""

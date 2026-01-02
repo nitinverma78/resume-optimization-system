@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse LinkedIn profile PDF and extract structured data."""
+"""[Supply Public Profile] Step 7: Parse LinkedIn profile PDF."""
 import sys,json,os
 from pathlib import Path
 import pymupdf

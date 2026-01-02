@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 8: Extract Resume Content - Parse resumes into structured Knowledge Base."""
+"""[Supply Knowledge Extraction] Step 5: Extract structured content from resumes."""
 import json,os,re,pymupdf
 from pathlib import Path
 from dataclasses import dataclass
@@ -183,7 +183,7 @@ def process_resume(fp: Path) -> Dict[str,Any]:
 
 def main(
     cls_file: Path = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json",
-    out_db: Path = Path(__file__).parent.parent/"data"/"supply"/"4_raw_extracted_content.json"
+    out_db: Path = Path(__file__).parent.parent/"data"/"supply"/"5_extracted_content.json"
 ):
     """Main extraction loop."""
     cls_file = Path(os.getenv('CLASSIFIED_FILE', str(cls_file)))

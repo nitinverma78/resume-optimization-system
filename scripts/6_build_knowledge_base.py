@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 9: Build Master Knowledge Base - Consolidate, dedupe, tag resume content."""
+"""[Supply Knowledge Extraction] Step 6: Build master knowledge base from extracted content."""
 import json,re,difflib
 from pathlib import Path
 from collections import defaultdict
@@ -91,8 +91,8 @@ def merge_bullets(bullets: List[RawBullet]) -> BulletPool:
     return unique
 
 def main(
-    inp: Path = Path(__file__).parent.parent/"data"/"supply"/"4_raw_extracted_content.json",
-    out: Path = Path(__file__).parent.parent/"data"/"supply"/"5_master_knowledge_base.json"
+    inp: Path = Path(__file__).parent.parent/"data"/"supply"/"5_extracted_content.json",
+    out: Path = Path(__file__).parent.parent/"data"/"supply"/"6_knowledge_base.json"
 ):
     """Main build loop."""
     if not inp.exists():

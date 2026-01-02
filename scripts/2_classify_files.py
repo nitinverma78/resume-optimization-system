@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 1.2: Content-Based File Classifier - Ownership, PPTX/doc support, better detection."""
+"""[Supply Discovery] Step 2: Content-based file classifier with ownership detection."""
 import json,re,subprocess,os
 from pathlib import Path
 from typing import List,Dict,Tuple,NewType

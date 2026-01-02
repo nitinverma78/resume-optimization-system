@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 7: Discover Resume Sections - Scan resumes for unique section headers."""
+"""[Supply Knowledge Extraction] Step 4: Discover unique section headers in resumes."""
 import json,os,re,pymupdf
 from pathlib import Path
 from collections import Counter
@@ -41,8 +41,8 @@ def get_pdf_headers(fp: Path) -> List[str]:
 
 def main(
     cls_file: Path = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json",
-    out_json: Path = Path(__file__).parent.parent/"data"/"supply"/"3_section_headers.json",
-    out_rpt: Path = Path(__file__).parent.parent/"data"/"supply"/"3_section_headers_report.md"
+    out_json: Path = Path(__file__).parent.parent/"data"/"supply"/"4_section_headers.json",
+    out_rpt: Path = Path(__file__).parent.parent/"data"/"supply"/"4_section_headers_report.md"
 ):
     """Main discovery loop."""
     cls_file = Path(os.getenv('CLASSIFIED_FILE', str(cls_file)))

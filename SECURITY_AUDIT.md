@@ -43,7 +43,7 @@ git grep -E "[a-z]+@[a-z]+\.(com|ai|net)"
 
 # Search for hardcoded paths with your username
 git grep -i "/Users/$YOUR_USERNAME"
-git grep -i "Downloads/MyResumes"
+git grep -i "Downloads/MyResumeResources"
 ```
 
 **Expected:** Only in examples/sample_profile.json or comments

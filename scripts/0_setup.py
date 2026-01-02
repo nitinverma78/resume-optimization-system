@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Setup script for first-time users. Creates directories and validates environment."""
+"""[Initiation] Setup script - Creates directories and validates environment."""
 import os,sys
 from pathlib import Path
 

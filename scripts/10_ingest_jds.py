@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Step 10: Ingest Job Descriptions (Demand Side) - Parse JDs into database."""
+"""[Demand Discovery] Step 10: Ingest job descriptions into database."""
 import json,os,re,subprocess,pymupdf
 from pathlib import Path
 from typing import List,Dict,Any

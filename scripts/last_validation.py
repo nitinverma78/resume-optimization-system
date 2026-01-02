@@ -6,11 +6,16 @@ from pathlib import Path
 SCRIPTS_DIR = Path(__file__).parent
 
 PIPELINE = [
-    "0_setup.py", "1_scan_resume_folder.py", "2_classify_files.py",
-    "3_generate_classification_report.py", "4_parse_linkedin_pdf.py",
-    "5_create_profile_db.py", "6_generate_markdown_profile.py",
-    "7_discover_resume_sections.py", "8_extract_resume_content.py",
-    "9_build_master_db.py", "10_ingest_jds.py"
+    # Initiation
+    "0_setup.py",
+    # Supply Discovery (Steps 1-3)
+    "1_scan_resume_folder.py", "2_classify_files.py", "3_classification_report.py",
+    # Supply Knowledge Extraction (Steps 4-6)
+    "4_discover_sections.py", "5_extract_content.py", "6_build_knowledge_base.py",
+    # Supply Public Profile (Steps 7-9)
+    "7_parse_linkedin.py", "8_create_profile_db.py", "9_generate_profile_md.py",
+    # Demand Discovery (Step 10)
+    "10_ingest_jds.py"
 ]
 
 LEGACY_VARS = ['CLASSIFIED_FILE','INVENTORY_FILE','REPORT_FILE','RESUME_CONTENT_DB',

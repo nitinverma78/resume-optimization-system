@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a readable classification report for user review."""
+"""[Supply Discovery] Step 3: Generate readable classification report."""
 import json,os
 from pathlib import Path
 

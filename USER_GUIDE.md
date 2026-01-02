@@ -13,7 +13,7 @@ When running the system with YOUR data, set these parameters:
 export USER_NAME="Your Full Name"  # e.g., "Jane Doe"
 
 # Your resume folder location
-export RESUME_FOLDER="$HOME/Downloads/MyResumes"  # Change to your actual folder
+export RESUME_FOLDER="$HOME/Downloads/MyResumeResources"  # Change to your actual folder
 
 # LinkedIn profile PDF location (if different from default)
 export LINKEDIN_PDF="./profile-data/MyLinkedInProfile.pdf"  # Change to your PDF name
@@ -27,8 +27,8 @@ export LINKEDIN_PDF="./profile-data/MyLinkedInProfile.pdf"  # Change to your PDF
 ```bash
 python scripts/1_scan_resume_folder.py
 ```
-- Uses: `RESUME_FOLDER` → e.g., `/Users/yourname/Downloads/MyResumes`
-- Default: `~/Downloads/MyResumes` (you override with your actual folder)
+- Uses: `RESUME_FOLDER` → e.g., `/Users/yourname/Downloads/MyResumeResources`
+- Default: `~/Downloads/MyResumeResources` (you override with your actual folder)
 - Output: `data/file_inventory.json`
 
 ### Step 2: Classify Files
@@ -106,11 +106,11 @@ git ls-files | grep -E '\.(pdf|docx)$' # Should find ZERO files
 | Parameter | Your Actual Value | Default (Generic) | Purpose |
 |-----------|------------------|-------------------|---------|
 | `USER_NAME` | `"Your Full Name"` | `"YOUR_NAME"` | Detect your docs |
-| `RESUME_FOLDER` | `~/Downloads/MyResumes` | `~/Downloads/MyResumes` | Your resume location |
+| `RESUME_FOLDER` | `~/Downloads/MyResumeResources` | `~/Downloads/MyResumeResources` | Your resume location |
 | `LINKEDIN_PDF` | `MyLinkedInProfile.pdf` | `MyLinkedInProfile.pdf` | Your profile |
 | `YOUR_USERNAME` | `"yourname"` | N/A | Security audit only |
 
-**Note:** The code defaults are now GENERIC (`MyResumes`, `MyLinkedInProfile`). You override with YOUR actual locations.
+**Note:** The code defaults are now GENERIC (`MyResumeResources`, `MyLinkedInProfile`). You override with YOUR actual locations.
 
 ---
 
@@ -129,7 +129,7 @@ No email configuration needed! ✅
 ```bash
 # One-time setup
 export USER_NAME="Your Full Name"
-export RESUME_FOLDER="$HOME/Downloads/MyResumes"
+export RESUME_FOLDER="$HOME/Downloads/MyResumeResources"
 
 # Run complete pipeline
 python scripts/1_scan_resume_folder.py

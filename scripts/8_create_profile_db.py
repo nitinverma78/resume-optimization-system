@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Create structured profile database from LinkedIn PDF."""
+"""[Supply Public Profile] Step 8: Create structured profile database."""
 import json,os
 from pathlib import Path
 from dataclasses import asdict
-from lib_profile_steps_5_6 import parse_profile, Profile
+from lib_profile import parse_profile, Profile
 
 def main(
     inp: Path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"linkedin-profile-parsed.json",
