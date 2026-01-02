@@ -7,7 +7,8 @@ data/
 !data/.gitkeep
 profile-data/
 !profile-data/.gitkeep
-!profile-data/parsing_config.json
+# parsing_config.json contains personal company names/patterns -> ignore it
+# !profile-data/parsing_config.json  <-- REMOVED exclusion (so it IS ignored)
 
 # Resume files (all formats)
 *.pdf
@@ -28,6 +29,8 @@ profile-structured.json
 file_inventory.json
 classified_files.json
 classification_report.md
+resume_content_db.json
+linkedin-profile.md
 
 # ============================================
 # ENVIRONMENT & CONFIGURATION
