@@ -12,8 +12,6 @@ def main(
     name: str = None  # User's full name (default: USER_NAME env var)
 ) -> Profile:
     """Main execution."""
-    inp  = Path(os.getenv('LINKEDIN_JSON', str(inp)))
-    out  = Path(os.getenv('PROFILE_JSON', str(out)))
     name = os.getenv('USER_NAME', name)
     
     with open(inp, 'r', encoding='utf-8') as f: data = json.load(f)

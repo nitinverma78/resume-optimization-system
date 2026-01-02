@@ -2,55 +2,69 @@
 """[Supply Discovery] Step 3: Generate readable classification report."""
 import json,os
 from pathlib import Path
+from collections import defaultdict
+
+ROOT = Path(os.path.expanduser(os.getenv('RESUME_FOLDER', '~/Downloads/MyResumeResources')))
+
+# Category definitions: key -> (title, description)
+CATS = [
+    ('user_resumes',  "User Resumes",           "Files identified as your resume variations"),
+    ('user_cls',      "User Cover Letters",     "Files identified as your cover letters"),
+    ('user_combined', "User Combined Documents","Files containing BOTH resume and cover letter"),
+    ('presentations', "Presentations",          "Your presentations and slide decks"),
+    ('jds',           "Job Descriptions",       "JDs for roles you've applied to"),
+    ('other_resumes', "Other Resumes",          "Resumes that don't appear to be yours"),
+    ('recruiters',    "Recruiters",             "Recruiter and exec search firm info"),
+    ('companies',     "Companies",              "Company research and lists"),
+    ('tracking',      "Tracking Files",         "Spreadsheets for tracking applications"),
+    ('other',         "Other Files",            "Miscellaneous files"),
+]
+
+def rel_folder(p: str) -> str:
+    """Get relative folder path from root."""
+    try:    return str(Path(p).parent.relative_to(ROOT)) or '.'
+    except: return Path(p).parent.name
+
+def group_by_folder(items: list) -> dict:
+    """Group items by folder path."""
+    d = defaultdict(list)
+    for f in items: d[rel_folder(f['path'])].append(f)
+    return dict(sorted(d.items()))
 
 def gen_report(cls_path: Path, out_md: Path):
-    """Generate markdown report of classifications."""
-    with open(cls_path, 'r', encoding='utf-8') as f: cls = json.load(f)
+    """Generate markdown report grouped by category and folder."""
+    with open(cls_path) as f: cls = json.load(f)
     
-    # Handle both old and new field names
-    user_cls  = cls.get('user_cls') or cls.get('user_cover_letters', [])
-    tracking  = cls.get('tracking') or cls.get('tracking_files', [])
+    # Aliases for backward compat
+    cls['user_cls'] = cls.get('user_cls') or cls.get('user_cover_letters', [])
+    cls['tracking'] = cls.get('tracking') or cls.get('tracking_files', [])
     
-    rpt = []
-    rpt.append("# File Classification Report\n")
-    rpt.append(f"Total files analyzed: {sum(len(v) for v in cls.values())}\n")
-    rpt.append("---\n\n")
+    rpt = [
+        "# File Classification Report\n",
+        f"**Root folder:** `{ROOT}`\n\n",
+        f"Total files: {sum(len(cls.get(k,'')) for k,_,_ in CATS)}\n",
+        "---\n\n"
+    ]
     
-    def add_section(title, desc, items, show_ext=False):
-        rpt.append(f"## {title} ({len(items)} files)\n")
-        rpt.append(f"*{desc}*\n\n")
-        for i, f in enumerate(sorted(items, key=lambda x: x['name']), 1):
-            ext = f.get('ext') or f.get('extension', '')
-            if show_ext: rpt.append(f"{i}. `{f['name']}` {ext or '(no ext)'}\n")
-            else:        rpt.append(f"{i}. `{f['name']}`\n")
-        rpt.append("\n---\n\n")
+    for key, title, desc in CATS:
+        items = cls.get(key, [])
+        rpt.append(f"## {title} ({len(items)} files)\n*{desc}*\n\n")
+        for folder, files in group_by_folder(items).items():
+            rpt.append(f"### {folder or '(root)'}/ ({len(files)} files)\n")
+            rpt.extend(f"- `{f['name']}`\n" for f in sorted(files, key=lambda x: x['name']))
+            rpt.append("\n")
+        rpt.append("---\n\n")
     
-    add_section("User Resumes", "Files identified as your resume variations", cls['user_resumes'])
-    add_section("User Cover Letters", "Files identified as your cover letters", user_cls)
-    add_section("User Combined Documents", "Files containing BOTH resume and cover letter", cls['user_combined'])
-    add_section("Other Resumes", "Resumes that don't appear to be yours", cls['other_resumes'])
-    add_section("Tracking Files", "Spreadsheets for tracking applications", tracking)
-    add_section("Other Files", "JDs, templates, presentations, misc", cls['other'], show_ext=True)
-    
-    with open(out_md, 'w', encoding='utf-8') as f: f.writelines(rpt)
+    with open(out_md, 'w') as f: f.writelines(rpt)
 
 def main(
     cls_file: Path = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json",
     out: Path = Path(__file__).parent.parent/"data"/"supply"/"2_classification_report.md"
 ):
-    """Main execution."""
-    cls_file = Path(os.getenv('CLASSIFIED_FILE', str(cls_file)))
-    out      = Path(os.getenv('REPORT_FILE', str(out)))
-    
     if not cls_file.exists():
-        print(f"Error: Classified files not found at {cls_file}")
-        print("Please run 2_classify_files.py first.")
-        return
-    
+        print(f"Error: {cls_file} not found. Run 2_classify_files.py first."); return
     print("Generating classification report...")
     gen_report(cls_file, out)
-    
     print(f"✓ Report generated: {out}")
-    print(f"\nYou can review the classifications in: {out}")
 
 if __name__ == "__main__": main()

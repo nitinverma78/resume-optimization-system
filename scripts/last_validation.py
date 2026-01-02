@@ -9,7 +9,7 @@ PIPELINE = [
     # Initiation
     "0_setup.py",
     # Supply Discovery (Steps 1-3)
-    "1_scan_resume_folder.py", "2_classify_files.py", "3_classification_report.py",
+    "1_scan_resume_folder.py", "2_classify_files.py", "2_confirm.py", "3_classification_report.py",
     # Supply Knowledge Extraction (Steps 4-6)
     "4_discover_sections.py", "5_extract_content.py", "6_build_knowledge_base.py",
     # Supply Public Profile (Steps 7-9)

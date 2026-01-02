@@ -186,7 +186,6 @@ def main(
     out_db: Path = Path(__file__).parent.parent/"data"/"supply"/"5_extracted_content.json"
 ):
     """Main extraction loop."""
-    cls_file = Path(os.getenv('CLASSIFIED_FILE', str(cls_file)))
     
     if not cls_file.exists():
         print(f"Error: {cls_file} not found.")

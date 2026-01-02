@@ -21,8 +21,30 @@ class ClassifiedFiles(BaseModel):
     user_cls: List[Dict]       # cover_letters
     user_combined: List[Dict]
     other_resumes: List[Dict]
+    presentations: List[Dict]  # NEW
+    jds: List[Dict]            # NEW: Job descriptions
+    recruiters: List[Dict]     # NEW: Recruiter info
+    companies: List[Dict]      # NEW: Company research
     tracking: List[Dict]       # tracking_files
     other: List[Dict]
+
+# --- Folder-based classification (HIGH PRIORITY) ---
+FOLDER_RULES = {
+    'Presentations':  'presentation',     # Files in Presentations/ folder
+    'Roles':          'jd',               # Job descriptions
+    'Jobs':           'jd',               # Job descriptions
+    'Recruiters':     'recruiter',        # Recruiter info
+    'CV samples':     'other_resume',     # Other people's resumes
+    'OthersInfo':     'other_resume',     # Other people's info
+}
+
+def get_folder_hint(fp: Path) -> str:
+    """Get classification hint from folder path."""
+    parts = fp.parts
+    for folder, cat in FOLDER_RULES.items():
+        if folder in parts:
+            return cat
+    return None
 
 # --- Text Extraction (one-liners where possible) ---
 def extract_pdf(fp: Path) -> Txt:
@@ -115,14 +137,49 @@ def is_resume(txt: str) -> bool:
     pat_cnt = sum(bool(re.search(v,txt)) for v in RES_PATTERNS.values()) + has_bullets
     return sec_cnt >= 3 and pat_cnt >= 2
 
-PRES_PATTERNS = [r'\bslide\s*\d+', r'\bpresentation\b', r'\bagenda\b',
-                 r'\bconference\b', r'\bsummit\b', r'\bworkshop\b']
-def is_pres(txt: str, fname: str) -> bool:
-    """Check if doc is a presentation."""
-    if fname.lower().endswith(('.ppt','.pptx')):
-        return not is_resume(txt)
-    pres_kw = sum(1 for p in PRES_PATTERNS if re.search(p, txt))
-    return pres_kw >= 3 and not is_resume(txt)
+JD_PATTERNS = [
+    r'\bjob\s+description\b', r'\bresponsibilities\b', r'\brequirements\b',
+    r'\bqualifications\b', r'\bwe\s+are\s+(?:looking|seeking)\b',
+    r'\bthe\s+ideal\s+candidate\b', r'\breports\s+to\b', r'\bequal\s+opportunity\b'
+]
+def is_jd(txt: str, fname: str) -> bool:
+    """Check if doc is a job description."""
+    fn_lower = fname.lower()
+    # Filename hints
+    if 'job description' in fn_lower or 'jd' in fn_lower: return True
+    if 'vice-president' in fn_lower and '--' in fn_lower: return True  # Scraped JD naming
+    # Content patterns
+    return sum(1 for p in JD_PATTERNS if re.search(p, txt)) >= 3
+
+def is_pres(txt: str, fname: str, fp: Path) -> bool:
+    """Check if doc is a presentation (strict: in Presentations folder or specific files)."""
+    fn = fname.lower().replace(' ','')
+    # User's profile/resume pptx files are NOT presentations
+    if 'nitinverma' in fn and fn.endswith('.pptx'):
+        return False
+    # In Presentations folder
+    if 'Presentations' in fp.parts:
+        return True
+    # Specific presentation files by name
+    pres_names = ['enterpriseagenticai', 'hexagonphysicalai']
+    if any(p in fn for p in pres_names):
+        return True
+    return False
+
+def is_company_research(fname: str) -> bool:
+    """Check if file is company research/list."""
+    fn = fname.lower()
+    hints = ['companies', 'company', 'top10k', 'top50k', 'contacts',
+             'computerprogramming', 'software_computer', 'hitech', 'jobsearchresults']
+    return any(h in fn for h in hints)
+
+def is_recruiter_info(fname: str) -> bool:
+    """Check if file is recruiter/exec search info."""
+    fn = fname.lower()
+    # Must have 'exec' and 'search' together, or 'firms', or 'recruiter'
+    has_exec_search = 'exec' in fn and 'search' in fn
+    hints = ['firms', 'recruiter']
+    return has_exec_search or any(h in fn for h in hints)
 
 # Load other people's names from config (git-ignored)
 def _load_other_names() -> List[str]:
@@ -141,26 +198,55 @@ def is_other_resume(txt: str) -> bool:
 
 # --- Main Classification ---
 def classify_file(finfo: Dict, name: str=None, email: str=None) -> Tuple[Cat, Reason]:
-    """Classify a file by analyzing content."""
+    """Classify a file by analyzing content and folder context."""
+    # Skip directories
     if finfo.get('is_dir') or finfo.get('is_directory'):
-        return 'other', 'directory'
+        return 'skip', 'directory'
     
     fp   = Path(finfo['path'])
     fn   = finfo['name']
     ext  = finfo.get('ext') or finfo.get('extension', '')
     
-    # Tracking files
-    if ext in ['.xlsx', '.csv']:
-        track_kw = ['search', 'log', 'track', 'companies', 'contacts', 'firms']
-        if any(kw in fn.lower() for kw in track_kw):
-            return 'tracking', 'spreadsheet with tracking keywords'
-        return 'other', 'spreadsheet without clear purpose'
+    # Skip directories (some may be listed without is_dir flag)
+    if not ext and fp.is_dir():
+        return 'skip', 'directory'
     
-    # Unsupported types
+    # 1. FOLDER-BASED CLASSIFICATION (highest priority)
+    folder_hint = get_folder_hint(fp)
+    if folder_hint == 'presentation':
+        return 'presentation', 'in Presentations folder'
+    if folder_hint == 'jd':
+        return 'jd', 'in Roles/Jobs folder (job description)'
+    if folder_hint == 'recruiter':
+        return 'recruiter', 'in Recruiters folder'
+    if folder_hint == 'other_resume':
+        return 'other_resume', 'in CV samples/OthersInfo folder'
+    
+    # 2. LINKEDIN EXPORT DATA (separate category - not useful for resume building)
+    if 'Basic_LinkedInDataExport' in str(fp):
+        return 'other', 'LinkedIn export data'
+    
+    # 3. FILENAME-BASED CLASSIFICATION
+    fn_lower = fn.lower()
+    
+    # Job search logs -> JDs category
+    if 'work search' in fn_lower or 'job search' in fn_lower:
+        return 'jd', 'job search activity log'
+    
+    if is_company_research(fn):
+        return 'company', 'company research/list filename'
+    if is_recruiter_info(fn):
+        return 'recruiter', 'recruiter/exec search filename'
+    
+    # 4. SPREADSHEETS
+    if ext in ['.xlsx', '.csv']:
+        return 'other', 'spreadsheet'
+    
+    # 4. UNSUPPORTED TYPES
     if ext not in ['.pdf', '.docx', '.doc', '.pptx', '.txt']:
         return 'other', f'unsupported file type {ext}'
     
-    # Extract text - aligned for clarity
+    # 5. EXTRACT TEXT
     if   ext == '.pdf':  txt = extract_pdf(fp)
     elif ext == '.docx': txt = extract_docx(fp)
     elif ext == '.doc':  txt = extract_doc(fp)
@@ -169,20 +255,24 @@ def classify_file(finfo: Dict, name: str=None, email: str=None) -> Tuple[Cat, Re
     
     if not txt: return 'other', 'could not extract text'
     
-    # Check other person's resume first
+    # 6. CONTENT-BASED: JD detection
+    if is_jd(txt, fn):
+        return 'jd', 'job description content'
+    
+    # 7. CONTENT-BASED: Presentation detection  
+    if is_pres(txt, fn, fp):
+        return 'presentation', 'presentation content'
+    
+    # 8. CONTENT-BASED: Other person's resume
     if is_other_resume(txt):
         return 'other_resume', "identified as another person's resume"
     
-    # Check ownership
+    # 9. OWNERSHIP CHECK
     if not is_user_doc(txt, fn, name, email):
         if is_resume(txt): return 'other_resume', "resume structure but not user's"
         return 'other', "not identified as user's document"
     
-    # User's doc - check presentation
-    if is_pres(txt, fn):
-        return 'other', "user's presentation (not resume/CV)"
-    
-    # Determine type
+    # 10. USER'S DOC - determine type
     has_cl, has_res = is_cl(txt), is_resume(txt)
     wc = len(txt.split())
     
@@ -203,7 +293,8 @@ def classify_inventory(
         inv = json.load(f)
     
     cls = {'user_resumes':[], 'user_cls':[], 'user_combined':[],
-           'other_resumes':[], 'tracking':[], 'other':[]}
+           'other_resumes':[], 'presentations':[], 'jds':[], 
+           'recruiters':[], 'companies':[], 'tracking':[], 'other':[]}
     
     files = inv['files']
     print(f"Analyzing {len(files)} files...\n")
@@ -212,13 +303,21 @@ def classify_inventory(
         if i % 20 == 0: print(f"  Processed {i}/{len(files)} files...")
         
         cat, reason = classify_file(finfo, name, email)
+        
+        # Skip directories entirely
+        if cat == 'skip': continue
+        
         finfo['classification_reason'] = reason
         
-        # Aligned categorization
+        # Categorization
         if   cat == 'user_resume':   cls['user_resumes'].append(finfo)
         elif cat == 'user_cl':       cls['user_cls'].append(finfo)
         elif cat == 'user_combined': cls['user_combined'].append(finfo)
         elif cat == 'other_resume':  cls['other_resumes'].append(finfo)
+        elif cat == 'presentation':  cls['presentations'].append(finfo)
+        elif cat == 'jd':            cls['jds'].append(finfo)
+        elif cat == 'recruiter':     cls['recruiters'].append(finfo)
+        elif cat == 'company':       cls['companies'].append(finfo)
         elif cat == 'tracking':      cls['tracking'].append(finfo)
         else:                        cls['other'].append(finfo)
     
@@ -231,8 +330,6 @@ def main(
     email: str = None   # User's email (default: USER_EMAIL env var)
 ):
     """Main execution."""
-    inv   = Path(os.getenv('INVENTORY_FILE', str(inv)))
-    out   = Path(os.getenv('CLASSIFIED_FILE', str(out)))
     name  = os.getenv('USER_NAME', name)
     email = os.getenv('USER_EMAIL', email)
     
@@ -241,8 +338,8 @@ def main(
         print("Please run 1_scan_resume_folder.py first.")
         return
     
-    print("Classifying files using FINAL IMPROVED CONTENT ANALYSIS...")
-    print("Now with: PPTX support, old .doc support, better ownership detection\n")
+    print("Classifying files with FOLDER + CONTENT ANALYSIS...")
+    print("Using: folder context, filename patterns, content analysis\n")
     
     classified = classify_inventory(inv, name, email)
     
@@ -253,10 +350,14 @@ def main(
     print(f"✓ Saved to: {out}\n")
     
     print("Classification Summary:")
-    print(f"  User Resumes (resume only): {len(classified.user_resumes)} files")
-    print(f"  User Cover Letters (CL only): {len(classified.user_cls)} files")
-    print(f"  User Combined (Resume + CL): {len(classified.user_combined)} files")
+    print(f"  User Resumes: {len(classified.user_resumes)} files")
+    print(f"  User Cover Letters: {len(classified.user_cls)} files")
+    print(f"  User Combined: {len(classified.user_combined)} files")
+    print(f"  Presentations: {len(classified.presentations)} files")
+    print(f"  Job Descriptions: {len(classified.jds)} files")
     print(f"  Other Resumes: {len(classified.other_resumes)} files")
+    print(f"  Recruiters: {len(classified.recruiters)} files")
+    print(f"  Companies: {len(classified.companies)} files")
     print(f"  Tracking Files: {len(classified.tracking)} files")
     print(f"  Other Files: {len(classified.other)} files")
     

@@ -73,7 +73,6 @@ def main(
     """Main execution."""
     # Allow env vars to override defaults (expanduser handles ~)
     folder = Path(os.path.expanduser(os.getenv('RESUME_FOLDER', str(folder))))
-    out    = Path(os.getenv('OUTPUT_FILE', str(out)))
     
     if not folder.exists():
         print(f"Error: Folder not found: {folder}")

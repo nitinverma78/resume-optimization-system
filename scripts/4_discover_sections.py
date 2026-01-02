@@ -45,7 +45,6 @@ def main(
     out_rpt: Path = Path(__file__).parent.parent/"data"/"supply"/"4_section_headers_report.md"
 ):
     """Main discovery loop."""
-    cls_file = Path(os.getenv('CLASSIFIED_FILE', str(cls_file)))
     
     if not cls_file.exists():
         print(f"Error: {cls_file} not found. Run Step 2 first.")

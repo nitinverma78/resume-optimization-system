@@ -101,8 +101,8 @@ def parse_profile(raw: str, name: str=None) -> Profile:
     """Parse LinkedIn profile text into structured data."""
     name = name or os.getenv('USER_NAME', 'Your Name')
     
-    # Load custom config
-    cfg_path = Path(os.getenv('PARSING_CONFIG', Path(__file__).parent.parent/"profile-data"/"parsing_config.json"))
+    # Load custom config (if exists)
+    cfg_path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"parsing_config.json"
     cfg = {}
     if cfg_path.exists():
         try:

@@ -17,8 +17,6 @@ def main(
     out: Path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"linkedin-profile-parsed.json"
 ):
     """Main execution."""
-    pdf = Path(os.getenv('LINKEDIN_PDF', str(pdf)))
-    out = out or pdf.parent/"linkedin-profile-parsed.json"
     
     if not pdf.exists():
         print(f"Error: PDF not found at {pdf}", file=sys.stderr)

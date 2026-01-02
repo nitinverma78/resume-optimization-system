@@ -73,8 +73,6 @@ def main(
     name: str = None
 ):
     """Main execution."""
-    inp  = Path(os.getenv('LINKEDIN_JSON', str(inp)))
-    out  = Path(os.getenv('PROFILE_MD', str(out)))
     name = os.getenv('USER_NAME', name)
 
     if not inp.exists():
