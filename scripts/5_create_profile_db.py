@@ -9,7 +9,7 @@ from pathlib import Path
 from dataclasses import asdict
 
 # Import shared parsing logic
-from profile_parser_lib import parse_profile, Profile
+from lib_profile_steps_5_6 import parse_profile, Profile
 
 
 def main(

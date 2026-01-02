@@ -67,13 +67,13 @@ def generate_classification_report(classified_path: Path, output_md: Path):
 
 
 def main(
-    classified_file: Path = Path(__file__).parent.parent / "data" / "classified_files.json",  # Input classified
-    output_md: Path = Path(__file__).parent.parent / "data" / "classification_report.md"  # Output report
+    classified_file: Path = Path(__file__).parent.parent / "data" / "supply" / "2_file_inventory.json",
+    output_report: Path = Path(__file__).parent.parent / "data" / "supply" / "2_classification_report.md"  # Output report
 ):
     """Main execution."""
     # Allow environment variables to override defaults
     classified_file = Path(os.getenv('CLASSIFIED_FILE', str(classified_file)))
-    output_md = Path(os.getenv('REPORT_FILE', str(output_md)))
+    output_md = Path(os.getenv('REPORT_FILE', str(output_report)))
     
     if not classified_file.exists():
         print(f"Error: Classified files not found at {classified_file}")

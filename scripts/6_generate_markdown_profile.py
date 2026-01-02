@@ -6,7 +6,7 @@ This ensures the human-readable view matches the system's structured data.
 
 import json, os, sys, re
 from pathlib import Path
-from profile_parser_lib import parse_profile, Profile
+from lib_profile_steps_5_6 import Profile, parse_profile
 
 def render_markdown(profile: Profile) -> str:
     """Render Profile object to Markdown."""
