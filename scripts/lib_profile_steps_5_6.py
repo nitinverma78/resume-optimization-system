@@ -2,9 +2,15 @@
 import json,re,os
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List,Dict
+from typing import List,Dict,NewType
 
-@dataclass
+# Domain Types (RL-book pattern)
+CompanyName = NewType('CompanyName', str)
+SkillName   = NewType('SkillName', str)
+PatentText  = NewType('PatentText', str)
+PubText     = NewType('PubText', str)
+
+@dataclass(frozen=True)
 class Experience:
     """Work experience entry."""
     company: str
@@ -14,7 +20,7 @@ class Experience:
     description: str
     achievements: List[str]
 
-@dataclass
+@dataclass(frozen=True)
 class Education:
     """Education entry."""
     school: str
@@ -22,7 +28,7 @@ class Education:
     field: str
     years: str
 
-@dataclass
+@dataclass(frozen=True)
 class Profile:
     """Complete professional profile."""
     name: str

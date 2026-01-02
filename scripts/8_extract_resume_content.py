@@ -2,7 +2,30 @@
 """Step 8: Extract Resume Content - Parse resumes into structured Knowledge Base."""
 import json,os,re,pymupdf
 from pathlib import Path
-from typing import List,Dict,Any
+from dataclasses import dataclass
+from typing import List,Dict,Any,NewType,Set
+
+# Domain Types (RL-book pattern)
+SectionName = NewType('SectionName', str)
+BulletText  = NewType('BulletText', str)
+Theme       = NewType('Theme', str)
+CompanyName = NewType('CompanyName', str)
+
+# Type Aliases
+SectionContent = Dict[str, Dict[str, Any]]  # {'header': str, 'content': List[str]}
+BulletInfo     = Dict[str, Any]             # {'text': str, 'tags': List[str]}
+ExperienceBlock = Dict[str, Any]            # {'company': str, 'role': str, 'bullets': List}
+
+@dataclass(frozen=True)
+class ParsedResume:
+    """Immutable parsed resume data."""
+    source_file: str
+    role_intent: str
+    summary: str
+    skills: Dict[str, List[str]]
+    patents: tuple
+    publications: tuple
+    talks: tuple
 
 # --- Section Patterns ---
 SEC_PATTERNS = {
