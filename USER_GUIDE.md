@@ -50,7 +50,7 @@ python scripts/generate_classification_report.py
 ```bash
 python scripts/create_profile_db.py
 ```
-- Uses: `USER_NAME` → `"Nitin Verma"`
+- Uses: `USER_NAME` → `"John Doe"`
 - Uses: LinkedIn PDF (default: `profile-data/MyLinkedInProfile.pdf`)
 - Output: `profile-data/profile-structured.json`
 

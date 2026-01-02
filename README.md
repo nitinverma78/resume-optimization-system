@@ -93,12 +93,12 @@ uv run python3 scripts/create_profile_db.py
 
 ## Profile Summary
 
-- **Name**: Nitin Verma
-- **Headline**: AI & Technology Executive | CTO / CAIO Leadership
-- **Experience**: 25+ years across Amazon, Staples, Zulily, FICO, and more
-- **Education**: Wharton MBA, UNC MS (Stats & OR), IIT Madras BTech
-- **Patents**: 4+ in AI/ML and robotics
-- **Skills**: AI Strategy, Agentic AI, Cloud Infrastructure, Team Building
+- **Name**: John Doe
+- **Headline**: Senior Software Engineer | Full Stack Developer
+- **Experience**: 10+ years across Tech Corp, Startup Inc, and Enterprise Solutions
+- **Education**: University of Technology (CS), State University (MBA)
+- **Patents**: 2+ in Software Architecture
+- **Skills**: Python, React, Cloud Infrastructure, Team Leadership
 
 ## Development Notes
 

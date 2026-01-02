@@ -64,6 +64,18 @@ def parse_profile(
     if user_name is None:
         user_name = os.getenv('USER_NAME', 'Your Name')  # Generic placeholder
     
+    # Load custom parsing config if available
+    config_path = Path(os.getenv('PARSING_CONFIG', Path(__file__).parent.parent / "profile-data" / "parsing_config.json"))
+    parsing_config = {}
+    if config_path.exists():
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                parsing_config = json.load(f)
+            print(f"Loaded custom parsing config from {config_path.name}")
+        except Exception as e:
+            print(f"Warning: Could not load config {config_path}: {e}")
+            parsing_config = {}
+    
     # Extract basic info
     name_match = re.search(rf"({re.escape(user_name)})", raw_text)
     name = name_match.group(1) if name_match else user_name
@@ -89,11 +101,11 @@ def parse_profile(
     skills_section = extract_section(raw_text, "Top Skills", "Publications")
     skills = [s.strip() for s in skills_section.split('\n') if s.strip()]
     
-    # Parse experiences (simplified - would need more sophisticated parsing)
-    experiences = _parse_experiences_section(raw_text)
+    # Parse experiences
+    experiences = _parse_experiences_section(raw_text, parsing_config.get('companies'))
     
     # Parse education
-    education = _parse_education_section(raw_text)
+    education = _parse_education_section(raw_text, parsing_config.get('education'))
     
     # Extract patents
     patents_section = extract_section(raw_text, "Patents", user_name)
@@ -117,21 +129,21 @@ def parse_profile(
 
 
 def _parse_experiences_section(
-    text: str  # Full LinkedIn profile text
+    text: str,  # Full LinkedIn profile text
+    custom_companies: Dict[str, str] = None  # Optional custom patterns
 ) -> List[Experience]:  # List of parsed experiences
     """Parse work experience section."""
     exp_section = extract_section(text, "Experience", "Education")
     experiences = []
     
-    # Simple company extraction (would need refinement for production)
-    companies = {
-        "Manifold Systems": r"Manifold Systems\nCo-Founder\n(.*?)(?=TAG|$)",
-        "TAG - The Aspen Group": r"TAG - The Aspen Group\nVP Tech, AI & Innovation\n(.*?)(?=Staples|$)",
-        "Staples": r"Staples\n9 years.*?(?=Zulily|$)",
-        "Zulily": r"Zulily\nSr Customer Programs Manager\n(.*?)(?=Amazon|$)",
-        "Amazon": r"Amazon\n7 years.*?(?=FICO|$)",
-        "FICO": r"FICO®\n5 years.*?(?=Education|$)",
-    }
+    # Use custom patterns if provided, otherwise generic defaults
+    if custom_companies:
+        companies = custom_companies
+    else:
+        companies = {
+            "Example Corp": r"Example Corp\nTitle\n(.*?)(?=NextCompany|$)",
+            "Another Company": r"Another Company\nTitle\n(.*?)(?=PreviousCompany|$)",
+        }
     
     for company, pattern in companies.items():
         match = re.search(pattern, exp_section, re.DOTALL)
@@ -151,38 +163,36 @@ def _parse_experiences_section(
 
 
 def _parse_education_section(
-    text: str  # Full LinkedIn profile text
+    text: str,  # Full LinkedIn profile text
+    custom_education: List[Dict] = None  # Optional custom patterns
 ) -> List[Education]:  # List of parsed education entries
     """Parse education section."""
     edu_section = extract_section(text, "Education", "Page")
     education = []
     
-    # Wharton
-    if "Wharton" in edu_section:
-        education.append(Education(
-            school="The Wharton School",
-            degree="MBA",
-            field="General Management",
-            years="2012-2014"
-        ))
-    
-    # UNC
-    if "North Carolina" in edu_section:
-        education.append(Education(
-            school="University of North Carolina at Chapel Hill",
-            degree="MS",
-            field="Statistics & Operations Research",
-            years="2000-2002"
-        ))
-    
-    # IIT Madras
-    if "IIT" in edu_section or "Madras" in edu_section:
-        education.append(Education(
-            school="Indian Institute of Technology, Madras",
-            degree="BTech",
-            field="Chemical Engineering, Operations Research minor",
-            years="1996-2000"
-        ))
+    if custom_education:
+        for item in custom_education:
+            # Check if keyword(s) exist in section
+            matches = item['keyword'] in edu_section
+            if 'keyword2' in item:
+                matches = matches or (item['keyword2'] in edu_section)
+                
+            if matches:
+                education.append(Education(
+                    school=item['school'],
+                    degree=item['degree'],
+                    field=item['field'],
+                    years=item['years']
+                ))
+    else:
+        # Example University 1
+        if "University" in edu_section:
+            education.append(Education(
+                school="University Name",
+                degree="Degree Name",
+                field="Field of Study",
+                years="2010-2014"
+            ))
     
     return education
 
