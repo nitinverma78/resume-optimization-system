@@ -12,7 +12,10 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project
 
 # Copy scripts ONLY (No config, No data)
+# Copy application code
 COPY scripts/ ./scripts/
+COPY config/  ./config/
+COPY *.py     ./
 
 # Default Env Var for the container structure
 # This points to where we expect the USER to mount their resumes

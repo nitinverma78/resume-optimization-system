@@ -67,13 +67,18 @@ def scan_folder(
     return files
 
 def main(
-    folder: Path = Path.home()/"Downloads"/"MyResumeResources",  # Folder to scan
-    out: Path = Path(__file__).parent.parent/"data"/"supply"/"1_file_inventory.json"  # Output JSON
+    folder: Path = None,
+    out: Path = Path(__file__).parent.parent/"data"/"supply"/"1_file_inventory.json"
 ):
     """Main execution."""
-    # Allow env vars to override defaults (expanduser handles ~)
-    folder = Path(os.path.expanduser(os.getenv('RESUME_FOLDER', str(folder))))
-    
+    # Must use RESUME_FOLDER env var if argument not provided
+    if not folder:
+        if env_folder := os.getenv('RESUME_FOLDER'):
+            folder = Path(os.path.expanduser(env_folder))
+        else:
+            print("Error: RESUME_FOLDER not set. Please set it in .env or pass as argument.")
+            return
+
     if not folder.exists():
         print(f"Error: Folder not found: {folder}")
         print("Please provide a valid folder path.")

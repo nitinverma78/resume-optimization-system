@@ -12,101 +12,79 @@ This system uses semantic search and LLM-based content generation to:
 
 ## Tech Stack
 
-- **Python 3.14** - Latest stable Python with modern performance improvements
+- **Python 3.12** - Modern, stable Python environment (via Docker/UV)
 - **uv** - Fast, reproducible Python package management
+- **Docker** - Containerized execution for consistency and privacy
 - **PyMuPDF** - PDF parsing and text extraction
-- **LLM Integration** (planned) - GPT-4/Claude/Gemini for content generation
-- **Vector Database** (planned) - For semantic search of resume library
 
 ## Project Structure
 
 ```
 resume-optimization-system/
-├── profile-data/              # Your LinkedIn profile and structured data
-│   ├── MyLinkedInProfile.pdf
-│   ├── linkedin-profile-parsed.json
-│   └── profile-structured.json
-├── samples/                   # Manual optimization examples (to be added)
-│   └── role-{N}-{company}/
-│       ├── job-description.txt
-│       ├── final-resume.pdf
-│       ├── source-resumes/
-│       └── notes.md
-├── scripts/                   # Utility scripts
-├── scripts/                   # Utility scripts
+├── data/                      # Output data (GitIgnored)
+│   ├── supply/                # Parsed resumes & classification
+│   └── demand/                # Ingested JDs
+├── simulate/                  # Simulation Data (Fake)
+│   ├── input_resumes/         # Dummy resumes (for testing)
+│   ├── input_jds/             # Dummy JDs
+│   ├── sample_profile.json    # Example configuration
+│   └── demo_classification_config.json
+├── scripts/                   # Core Logic
 │   ├── 1_scan_resume_folder.py
 │   ├── 2_classify_files.py
-│   ├── 2a_verify_classifications.py         # Optional validation
-│   ├── 2b_check_misclassified.py            # Optional validation
-│   ├── 2c_analyze_file_content.py           # Optional validation
-│   ├── 2d_debug_classification_patterns.py  # Optional validation
-│   ├── 3_generate_classification_report.py
-│   ├── 4_parse_linkedin_pdf.py
-│   └── 5_create_profile_db.py
-├── pyproject.toml            # Project dependencies
-└── README.md                 # This file
+│   ├── ... (Steps 3-10)
+│   └── main.py                # CLI Entry Point
+├── docker-compose.yml         # Container config
+└── README.md                  # This file
+```
+
+## Quick Start (Simulation)
+
+Run the full end-to-end simulation using "Jane Doe" (fake persona):
+
+```bash
+# Local simulation
+python main.py --demo
+
+# Docker simulation
+docker compose run app python main.py --demo
 ```
 
 ## Setup
 
 ### Prerequisites
-- Python 3.14
-- uv (installed automatically if not present)
+- Python 3.12+ OR Docker
 
 ### Installation
 
 ```bash
-# Clone/navigate to the project
+git clone <repo>
 cd resume-optimization-system
-
-# Install dependencies (uv will create a virtual environment automatically)
 uv sync
-
-# Verify installation
-uv run python3 --version
-```
-
-### Running Scripts
-
-```bash
-# Parse LinkedIn PDF
-uv run python3 scripts/4_parse_linkedin_pdf.py
-
-# Create structured profile database
-uv run python3 scripts/5_create_profile_db.py
 ```
 
 ## Current Status
 
-✅ **Phase 1: Profile Data Processing** (Complete)
-- Parsed LinkedIn profile PDF
-- Extracted structured data (name, headline, summary, skills, experiences, education, patents)
-- Created searchable profile database
+✅ **Phase 1: Supply Discovery** (Complete)
+- Scans and classifies resumes (User vs Other)
+- Extracts content (Skills, Experience, Education)
+- Generates structured profile data
 
-🚧 **Phase 2: Manual Process Analysis** (Pending)
-- Awaiting sample applications to analyze manual optimization process
+✅ **Phase 2: Infrastructure** (Complete)
+- Dockerized setup for privacy
+- `main.py` CLI runner
+- Classification Test Suite
 
-📋 **Phase 3: AI System Design** (Planned)
-- Design retrieval & ranking system
-- Build resume optimization engine
-- Create cover letter generator
-- Add Google Drive integration
+🚧 **Phase 3: Demand Discovery** (In Progress)
+- Ingesting JDs (Raw + Classified)
+- Matching Engine (Gap Analysis) - *Coming Soon*
 
-## Next Steps
+## Persona: Jane Doe (Simulation)
 
-1. **Add Manual Samples**: Place 2-3 examples of past applications in `samples/` folder
-2. **Analyze Patterns**: Review how you manually optimized resumes
-3. **Design AI System**: Create implementation plan for autonomous optimization
-4. **Build MVP**: Implement core resume generation functionality
+- **Name**: Jane Doe
+- **Role**: Software Engineer
+- **Skills**: Python, Machine Learning, AWS, Docker
 
-## Profile Summary
-
-- **Name**: John Doe
-- **Headline**: Senior Software Engineer | Full Stack Developer
-- **Experience**: 10+ years across Tech Corp, Startup Inc, and Enterprise Solutions
-- **Education**: University of Technology (CS), State University (MBA)
-- **Patents**: 2+ in Software Architecture
-- **Skills**: Python, React, Cloud Infrastructure, Team Leadership
 
 ## Development Notes
 

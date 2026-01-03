@@ -38,15 +38,19 @@ YOUR_USERNAME="john"  # Set this to your system username
 # Search for your name (case-insensitive)
 git grep -i "$YOUR_NAME"
 
-# Search for personal emails
-git grep -E "[a-z]+@[a-z]+\.(com|ai|net)"
+# Search for personal emails (excluding generic examples)
+git grep -E "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" | grep -v "example.com"
+
+# Search for potential secrets (API keys, passwords - naive check)
+git grep -i "password" | grep -v "PASSWORD"
+git grep -E "(api|secret)[_-]?key"
 
 # Search for hardcoded paths with your username
 git grep -i "/Users/$YOUR_USERNAME"
-git grep -i "Downloads/MyResumeResources"
+git grep -i "Downloads/"
 ```
 
-**Expected:** Only in examples/sample_profile.json or comments
+**Expected:** Only in simulate/sample_profile.json or comments
 
 ---
 
@@ -79,11 +83,11 @@ rm data/test-private.json
 
 ---
 
-## 6. Verify Sample Data is Safe
+## 6. Verify Simulation Data is Safe
 
 ```bash
-# Check examples directory
-cat examples/sample_profile.json
+# Check simulate directory
+cat simulate/sample_profile.json
 
 # Ensure it's fake data
 ```
@@ -118,7 +122,7 @@ git filter-branch --force --index-filter \
 - [ ] .gitignore includes all private directories
 - [ ] No .pdf/.docx files committed
 - [ ] No personal information in code
-- [ ] examples/ contains only fake data
+- [ ] simulate/ contains only fake data
 - [ ] README updated for public users
 - [ ] setup.py script works
 - [ ] Environment variables documented in .env.example
@@ -137,7 +141,7 @@ cd resume-test
 python scripts/setup.py
 
 # Try with sample data
-export RESUME_FOLDER=./examples/sample_resumes
+export RESUME_FOLDER=./simulate/input_resumes
 python scripts/1_scan_resume_folder.py
 ```
 

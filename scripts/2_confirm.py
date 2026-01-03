@@ -3,8 +3,22 @@
 import json,sys
 from pathlib import Path
 
-CFG  = Path(__file__).parent.parent/"config"/"classification_config.json"
+import os, argparse
 DATA = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json"
+
+def get_config_path():
+    """Resolve config path from Arg > Env > Default."""
+    default_dir = Path(__file__).parent.parent/"config"
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config-dir", help="Path to config directory")
+    args, _ = parser.parse_known_args()
+    
+    cfg_dir = Path(args.config_dir) if args.config_dir else Path(os.getenv('CONFIG_DIR', str(default_dir)))
+    print(f"DEBUG: Using config dir: {cfg_dir}")
+    return cfg_dir/"classification_config.json"
+
+CFG = get_config_path()
 
 def load_tests() -> dict:
     """Load test cases from config: {filename: expected_category}."""

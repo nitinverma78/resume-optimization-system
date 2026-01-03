@@ -1,0 +1,14 @@
+Jane Doe
+Software Engineer
+San Francisco, CA | jane.doe@example.com
+
+SUMMARY
+Experienced engineer with Python and ML skills.
+
+EXPERIENCE
+Tech Corp | Senior Engineer | 2020-Present
+- Built ML pipelines using Python and Docker.
+- Managed 3 juniors.
+
+EDUCATION
+State University | BS CS | 2018

@@ -4,7 +4,8 @@ import json,os
 from pathlib import Path
 from collections import defaultdict
 
-ROOT = Path(os.path.expanduser(os.getenv('RESUME_FOLDER', '~/Downloads/MyResumeResources')))
+# If env var not set, default to None (relative paths might fail, defaulting to full)
+ROOT = Path(os.path.expanduser(os.getenv('RESUME_FOLDER', '/tmp')))
 
 # Category definitions: key -> (title, description)
 CATS = [

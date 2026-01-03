@@ -1,22 +1,32 @@
+version: '3.8'
+
 services:
   app:
     build: .
     image: resume-optimizer
+
+    # Load variables from .env file automatically
+    env_file:
+      - .env
+
     environment:
-      - USER_NAME=Nitin Verma
-      - USER_EMAIL=nitinverma78@gmail.com
-      # Internal path where container looks for resumes
+      # Pass through variables from host .env to container
+      - USER_NAME=${USER_NAME:?err}
+      - USER_EMAIL=${USER_EMAIL:?err}
+
+      # Internal container path for resumes (Fixed standard)
       - RESUME_FOLDER=/input_resumes
+
     volumes:
-      # 1. INPUT: Map your local resume folder to container's input path
-      # Replace './data/resumes' with your actual path if different (e.g. ~/Downloads/MyResumeResources)
-      - ${HOST_RESUME_FOLDER:-~/Downloads/MyResumeResources}:/input_resumes:ro
-      
-      # 2. OUTPUT: Map local data folder to container to save results
+      # 1. INPUT: Map host resume folder (from .env) to internal /input_resumes
+      # syntax: host_path:container_path:read_only
+      - ${RESUME_FOLDER:?err}:/input_resumes:ro
+
+      # 2. OUTPUT: Persist generated data to local ./data folder
       - ./data:/app/data
-      
-      # 3. CONFIG: Map local config (optional, for test cases)
+
+      # 3. CONFIG: Map config folder (for custom parsing rules/tests)
       - ./config:/app/config:ro
-    
-    # Clean up container after run
-    # command: python scripts/last_validation.py
+
+    # Default command: Run the full pipeline
+    command: python main.py
