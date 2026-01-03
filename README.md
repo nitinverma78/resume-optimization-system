@@ -15,7 +15,7 @@ This system uses local AI models and semantic search to analyze your past resume
 ```mermaid
 graph TD
     subgraph "Phase 1: Supply (Your Data)"
-        Raw[Reference Resumes (PDFs)] -->|Scanning| Inventory[Inventory JSON]
+        Raw["Reference Resumes (PDFs)"] -->|Scanning| Inventory[Inventory JSON]
         Inventory -->|Classification| Classified[Classified Resumes]
         Classified -->|Extraction| Chunks[Content Chunks]
         Chunks -->|Structuring| Profile[Structured Profile DB]
@@ -26,7 +26,7 @@ graph TD
     end
 
     subgraph "Phase 3: Matching"
-        Profile & JD_Parsed -->|Gap Analysis| Match[Match Score & Gaps]
+        Profile & JD_Parsed -->|Gap Analysis| Match["Match Score & Gaps"]
         Match -->|Optimization| Final[Tailored Resume.md]
     end
 ```
