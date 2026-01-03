@@ -1,0 +1,22 @@
+[
+  {
+    "source_file": "MyLinkedInProfile.pdf",
+    "role_intent": "General",
+    "summary": "",
+    "skills": {},
+    "experience": {
+      "recent": [],
+      "earlier": []
+    }
+  },
+  {
+    "source_file": "JaneDoe_Resume.txt",
+    "role_intent": "summary",
+    "summary": "experienced engineer with python and ml skills.",
+    "skills": {},
+    "experience": {
+      "recent": [],
+      "earlier": []
+    }
+  }
+]

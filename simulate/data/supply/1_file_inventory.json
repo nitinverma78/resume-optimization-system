@@ -1,0 +1,32 @@
+{
+  "scan_date": "2026-01-03T13:27:47.892609",
+  "src_folder": "/Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/simulate/input_resumes",
+  "n_files": 3,
+  "n_dirs": 0,
+  "files": [
+    {
+      "path": "/Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/simulate/input_resumes/SoftwareEngineer_JD.txt",
+      "name": "SoftwareEngineer_JD.txt",
+      "ext": ".txt",
+      "sz": 490,
+      "modified": "2026-01-02T21:47:43.504197",
+      "is_dir": false
+    },
+    {
+      "path": "/Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/simulate/input_resumes/MyLinkedInProfile.pdf",
+      "name": "MyLinkedInProfile.pdf",
+      "ext": ".pdf",
+      "sz": 2591,
+      "modified": "2026-01-02T21:03:37.741246",
+      "is_dir": false
+    },
+    {
+      "path": "/Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/simulate/input_resumes/JaneDoe_Resume.txt",
+      "name": "JaneDoe_Resume.txt",
+      "ext": ".txt",
+      "sz": 290,
+      "modified": "2026-01-02T20:14:37.513117",
+      "is_dir": false
+    }
+  ]
+}

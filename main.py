@@ -55,6 +55,11 @@ def main():
     p.add_argument("--step", help="Run only specific step")
     args = p.parse_args()
 
+    # If --clean is used alone, just clean and exit
+    if args.clean and not (args.demo or args.phase or args.step or args.plan):
+        if (d:=ROOT/"data").exists(): print("🧹 Cleaning data/..."); shutil.rmtree(d)
+        print("✅ Data cleaned"); sys.exit(0)
+
     ok, msg, over = check_env("demo" if args.demo else "normal", args.clean)
     print(f"\n{msg}\n"); 
     if not ok: sys.exit(1)
