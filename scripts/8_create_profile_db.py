@@ -5,13 +5,20 @@ from pathlib import Path
 from dataclasses import asdict
 from lib_profile import parse_profile, Profile
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 def main(
-    inp: Path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"linkedin-profile-parsed.json",
+    inp: Path = None,
     cfg: Path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"parsing_config.json",
-    out: Path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"profile-structured.json",
+    out: Path = None,
     name: str = None  # User's full name (default: USER_NAME env var)
 ) -> Profile:
     """Main execution."""
+    data_dir = get_data_dir()
+    if not inp: inp = data_dir/"supply"/"profile_data"/"linkedin-profile-parsed.json"
+    if not out: out = data_dir/"supply"/"profile_data"/"profile-structured.json"
     name = os.getenv('USER_NAME', name)
     
     with open(inp, 'r', encoding='utf-8') as f: data = json.load(f)

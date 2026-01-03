@@ -29,21 +29,52 @@ PIPELINE = {
 
 def check_env(mode="normal", clean=False):
     """Robust Pre-flight Check: Returns (Ok, Message, overrides_dict)."""
+    overrides = {}
+    msgs = []
     
-    # 0. Clean data folder if requested or demo mode
-    if clean or mode == "demo":
-        import shutil
+    # === DEMO MODE ===
+    if mode == "demo":
+        print("🔧 Configuring Demo Environment (Isolated)...")
+        
+        sim_dir = ROOT/"simulate"
+        demo_data = sim_dir/"data"
+        
+        # 1. Set Isolated Environment
+        os.environ['RESUME_FOLDER'] = str(sim_dir/"input_resumes")
+        os.environ['USER_NAME'] = "Jane Doe"
+        os.environ['USER_EMAIL'] = "jane.doe@example.com"
+        os.environ['DATA_DIR']  = str(demo_data) # Redirect I/O to simulate/data
+        
+        # 2. Always Clean Simulation Data (Fresh Run)
+        if demo_data.exists():
+            print(f"🧹 Clearing simulation output: {demo_data.relative_to(ROOT)}")
+            shutil.rmtree(demo_data)
+            
+        # 3. Initialize Simulation Dirs
+        for d in ["supply/profile_data", "demand", "matching"]:
+             (demo_data/d).mkdir(parents=True, exist_ok=True)
+             
+        # 4. Config Override
+        demo_cfg_dir = sim_dir/"config"
+        overrides['2_confirm.py'] = ["--config-dir", str(demo_cfg_dir)]
+
+        return True, "✅ Demo Mode Activated (Output: simulate/data)", overrides
+
+    # === NORMAL MODE ===
+    
+    # 1. Clean Production Data ONLY if requested
+    if clean:
         data_dir = ROOT/"data"
         if data_dir.exists():
-            reason = "Demo Mode" if mode == "demo" else "Clean Flag"
-            print(f"🔧 Cleaning data/ folder ({reason})...")
+            print("🧹 Cleaning production data/ folder...")
             shutil.rmtree(data_dir)
     
-    # 1. Init directories
-    for d in ["data", "data/supply", "data/supply/profile_data", "data/demand", "data/matching", "simulate", "config"]:
+    # 2. Initialize Production Dirs
+    # Ensure simulate/config exist too for structure
+    for d in ["data", "data/supply/profile_data", "data/demand", "data/matching", "simulate", "config"]:
         (ROOT/d).mkdir(parents=True, exist_ok=True); (ROOT/d/".gitkeep").touch()
 
-    # 2. Load .env
+    # 3. Load .env
     env_path = ROOT / '.env'
     if env_path.exists():
         with open(env_path) as f:
@@ -53,26 +84,7 @@ def check_env(mode="normal", clean=False):
                     if k not in os.environ or not os.environ[k]:
                         os.environ[k] = v.strip('"')
     
-    overrides = {}
-    msgs = [] # Initialize logging list
-
-    if mode == "demo":
-        # === DEMO MODE OVERRIDES ===
-        print("🔧 Configuring Demo Environment...")
-        
-        # 1. Supply & Identity
-        demo_res = ROOT/"simulate"/"input_resumes"
-        os.environ['RESUME_FOLDER'] = str(demo_res)
-        os.environ['USER_NAME'] = "Jane Doe"
-        os.environ['USER_EMAIL'] = "jane.doe@example.com"
-        
-        # 2. Config Override (Passed as Arg)
-        demo_cfg_dir = ROOT/"simulate"/"config"
-        overrides['2_confirm.py'] = ["--config-dir", str(demo_cfg_dir)]
-
-        return True, "✅ Demo Mode Activated (Jane Doe)", overrides
-
-    # Normal Checks
+    # 4. Validation
     res_folder = os.getenv('RESUME_FOLDER')
     if not res_folder:
         msgs.append("❌ Environment Variable Missing: RESUME_FOLDER")
@@ -87,7 +99,7 @@ def check_env(mode="normal", clean=False):
         msgs.append("   -> Fix: Set USER_EMAIL='you@email.com' (used for ID matching)")
     
     if msgs: return False, "\n".join(msgs), overrides
-    return True, "✅ Environment OK", overrides
+    return True, "✅ Environment OK (Output: data/)", overrides
 
 def run_step(script_name, overrides=None):
     """Run a single script with optional arg overrides."""

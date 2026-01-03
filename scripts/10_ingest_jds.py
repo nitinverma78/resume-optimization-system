@@ -13,10 +13,9 @@ import json,os,re,subprocess,pymupdf,csv
 from pathlib import Path
 from typing import List,Dict,Any
 
-DATA = Path(__file__).parent.parent/"data"
-RAW  = DATA/"demand"/"raw_jds"
-INV  = DATA/"supply"/"2_file_inventory.json"
-OUT  = DATA/"demand"/"1_jd_database.json"
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
 
 def extract_txt(fp: Path) -> str:
     """Read text from supported file types."""
@@ -72,6 +71,11 @@ def parse_linkedin_csv(fp: Path) -> List[Dict[str,Any]]:
 
 def main():
     print("🚀 Ingesting Job Descriptions...")
+    DATA = get_data_dir()
+    RAW  = DATA/"demand"/"raw_jds"
+    INV  = DATA/"supply"/"2_file_inventory.json"
+    OUT  = DATA/"demand"/"1_jd_database.json"
+
     db = []
     
     # 1. Classified JDs (from Step 2 inventory)

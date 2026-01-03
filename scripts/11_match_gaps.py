@@ -1,24 +1,33 @@
 #!/usr/bin/env python3
 """[Matching Engine] Step 11: Calculate Gap Analysis between Profile and JDs."""
-import json, sys, re, math
+import json, sys, re, math, os
 from pathlib import Path
 from collections import Counter
 import argparse
 
-ROOT = Path(__file__).parent.parent
-DATA_SUPPLY = ROOT/"data"/"supply"/"profile_data"
-DATA_DEMAND = ROOT/"data"/"demand"
-OUT_DIR     = ROOT/"data"/"matching"
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
+# ROOT = Path(__file__).parent.parent
+# (Module constants removed in favor of instance variables)
 
 class Matcher:
     def __init__(self):
+        self.data_dir = get_data_dir()
+        self.data_supply = self.data_dir/"supply"/"profile_data"
+        self.data_demand = self.data_dir/"demand"
+        self.out_dir     = self.data_dir/"matching"
+        
+        self.out_dir.mkdir(parents=True, exist_ok=True)
         self.profile = self._load_profile()
         self.jds     = self._load_jds()
-        OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     def _load_profile(self):
         """Load structured profile."""
-        path = DATA_SUPPLY/"profile-structured.json"
+    def _load_profile(self):
+        """Load structured profile."""
+        path = self.data_supply/"profile-structured.json"
         if not path.exists():
             print(f"❌ Missing profile: {path}")
             sys.exit(1)
@@ -26,7 +35,9 @@ class Matcher:
 
     def _load_jds(self):
         """Load JDs database."""
-        path = DATA_DEMAND/"1_jd_database.json"
+    def _load_jds(self):
+        """Load JDs database."""
+        path = self.data_demand/"1_jd_database.json"
         if not path.exists():
             print(f"❌ Missing JD database: {path}")
             sys.exit(1)
@@ -86,12 +97,14 @@ class Matcher:
             print(f"  • {jd.get('filename')}: {score}% Match")
 
         # Save results
-        out_path = OUT_DIR/"11_gap_analysis.json"
+        # Save results
+        out_path = self.out_dir/"11_gap_analysis.json"
         with open(out_path, 'w') as f: json.dump(results, f, indent=2)
         print(f"✅ Gap Analysis saved to: {out_path}")
         
         # Generate Markdown Report
-        md_path = OUT_DIR/"11_gap_analysis_report.md"
+        # Generate Markdown Report
+        md_path = self.out_dir/"11_gap_analysis_report.md"
         with open(md_path, 'w') as f:
             f.write("# Gap Analysis Report\n\n")
             for r in results:

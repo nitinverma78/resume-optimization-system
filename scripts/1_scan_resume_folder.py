@@ -66,11 +66,16 @@ def scan_folder(
     
     return files
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 def main(
     folder: Path = None,
-    out: Path = Path(__file__).parent.parent/"data"/"supply"/"1_file_inventory.json"
+    out: Path = None
 ):
     """Main execution."""
+    if not out: out = get_data_dir()/"supply"/"1_file_inventory.json"
     # Must use RESUME_FOLDER env var if argument not provided
     if not folder:
         if env_folder := os.getenv('RESUME_FOLDER'):

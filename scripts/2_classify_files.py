@@ -323,13 +323,20 @@ def classify_inventory(
     
     return ClassifiedFiles(**cls)
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 def main(
-    inv: Path = Path(__file__).parent.parent/"data"/"supply"/"1_file_inventory.json",
-    out: Path = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json",
+    inv: Path = None,
+    out: Path = None,
     name: str = None,   # User's full name (default: USER_NAME env var)
     email: str = None   # User's email (default: USER_EMAIL env var)
 ):
     """Main execution."""
+    data_dir = get_data_dir()
+    if not inv: inv = data_dir/"supply"/"1_file_inventory.json"
+    if not out: out = data_dir/"supply"/"2_file_inventory.json"
     name  = os.getenv('USER_NAME', name)
     email = os.getenv('USER_EMAIL', email)
     

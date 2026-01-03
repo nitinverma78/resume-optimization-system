@@ -58,10 +58,17 @@ def gen_report(cls_path: Path, out_md: Path):
     
     with open(out_md, 'w') as f: f.writelines(rpt)
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 def main(
-    cls_file: Path = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json",
-    out: Path = Path(__file__).parent.parent/"data"/"supply"/"2_classification_report.md"
+    cls_file: Path = None,
+    out: Path = None
 ):
+    data_dir = get_data_dir()
+    if not cls_file: cls_file = data_dir/"supply"/"2_file_inventory.json"
+    if not out: out = data_dir/"supply"/"2_classification_report.md"
     if not cls_file.exists():
         print(f"Error: {cls_file} not found. Run 2_classify_files.py first."); return
     print("Generating classification report...")

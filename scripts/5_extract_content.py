@@ -181,11 +181,18 @@ def process_resume(fp: Path) -> Dict[str,Any]:
     
     return data
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 def main(
-    cls_file: Path = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json",
-    out_db: Path = Path(__file__).parent.parent/"data"/"supply"/"5_extracted_content.json"
+    cls_file: Path = None,
+    out_db: Path = None
 ):
     """Main extraction loop."""
+    data_dir = get_data_dir()
+    if not cls_file: cls_file = data_dir/"supply"/"2_file_inventory.json"
+    if not out_db: out_db = data_dir/"supply"/"5_extracted_content.json"
     
     if not cls_file.exists():
         print(f"Error: {cls_file} not found.")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """[Supply Knowledge Extraction] Step 6: Build master knowledge base from extracted content."""
-import json,re,difflib
+import json,re,difflib,os
 from pathlib import Path
 from collections import defaultdict
 from dataclasses import dataclass
@@ -90,11 +90,18 @@ def merge_bullets(bullets: List[RawBullet]) -> BulletPool:
             unique.append({'text': b['text'], 'sources': [b['source']], 'tags': get_tags(BulletText(b['text']))})
     return unique
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 def main(
-    inp: Path = Path(__file__).parent.parent/"data"/"supply"/"5_extracted_content.json",
-    out: Path = Path(__file__).parent.parent/"data"/"supply"/"6_knowledge_base.json"
+    inp: Path = None,
+    out: Path = None
 ):
     """Main build loop."""
+    data_dir = get_data_dir()
+    if not inp: inp = data_dir/"supply"/"5_extracted_content.json"
+    if not out: out = data_dir/"supply"/"6_knowledge_base.json"
     if not inp.exists():
         print(f"Error: {inp} not found. Run Step 8 first.")
         return

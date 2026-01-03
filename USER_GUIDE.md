@@ -16,8 +16,7 @@ export USER_EMAIL="you@example.com"
 # Your resume folder location
 export RESUME_FOLDER="/path/to/your/resumes"
 
-# LinkedIn profile PDF location (optional)
-export LINKEDIN_PDF="./profile-data/MyLinkedInProfile.pdf"
+# LINKEDIN_PDF is auto-detected in RESUME_FOLDER
 ```
 
 ---
@@ -30,7 +29,7 @@ python scripts/1_scan_resume_folder.py
 ```
 - Uses: `RESUME_FOLDER` → e.g., `/Users/yourname/Documents/Resumes`
 - **Output:** `data/supply/1_file_inventory.json`
-  *(Note: All outputs are saved to the local `data/` folder, even when running via Docker/Simulation)*
+  *(Note: Normal runs output to `data/`. Simulation runs output to `simulate/data/`.)*
 
 ### Step 2: Classify Files
 ```bash

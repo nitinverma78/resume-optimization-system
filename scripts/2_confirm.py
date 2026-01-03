@@ -4,7 +4,12 @@ import json,sys
 from pathlib import Path
 
 import os, argparse
-DATA = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json"
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
+# DATA = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json"
+# (Module constant removed locally, resolved in run())
 
 def get_config_path():
     """Resolve config path from Arg > Env > Default."""
@@ -30,6 +35,8 @@ def run():
     """Run tests, return (passed, failed, missing, failures)."""
     tests = load_tests()
     if not tests:  return 0, 0, 0, []
+    
+    DATA = get_data_dir()/"supply"/"2_file_inventory.json"
     if not DATA.exists():
         print(f"❌ Not found: {DATA}"); return 0, 0, len(tests), []
     

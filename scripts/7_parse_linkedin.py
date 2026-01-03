@@ -12,6 +12,10 @@ def parse_pdf(pdf: Path) -> dict:
     doc.close()
     return {"raw_text": txt, "metadata": {"source": str(pdf), "pages": n_pages}}
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 import argparse
 
 def main():
@@ -23,7 +27,7 @@ def main():
     args = parser.parse_args()
 
     # Default output path
-    default_out = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"linkedin-profile-parsed.json"
+    default_out = get_data_dir()/"supply"/"profile_data"/"linkedin-profile-parsed.json"
     
     # Resolve PDF path: Arg > Env > Search RESUME_FOLDER
     if args.pdf:

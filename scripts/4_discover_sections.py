@@ -39,12 +39,20 @@ def get_pdf_headers(fp: Path) -> List[str]:
         return extract_headers(txt)
     except: return []
 
+def get_data_dir():
+    if d := os.getenv('DATA_DIR'): return Path(d)
+    return Path(__file__).parent.parent/"data"
+
 def main(
-    cls_file: Path = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json",
-    out_json: Path = Path(__file__).parent.parent/"data"/"supply"/"4_section_headers.json",
-    out_rpt: Path = Path(__file__).parent.parent/"data"/"supply"/"4_section_headers_report.md"
+    cls_file: Path = None,
+    out_json: Path = None,
+    out_rpt: Path = None
 ):
     """Main discovery loop."""
+    data_dir = get_data_dir()
+    if not cls_file: cls_file = data_dir/"supply"/"2_file_inventory.json"
+    if not out_json: out_json = data_dir/"supply"/"4_section_headers.json"
+    if not out_rpt:  out_rpt  = data_dir/"supply"/"4_section_headers_report.md"
     
     if not cls_file.exists():
         print(f"Error: {cls_file} not found. Run Step 2 first.")
