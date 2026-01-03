@@ -204,10 +204,6 @@ scripts/2d_debug_classification_patterns.py
 # Logs
 *.log
 
-# Simulation data (allow specific extensions)
-!simulate/input_resumes/*.txt
-!simulate/input_resumes/*.pdf
-!simulate/input_jds/*.txt
-!simulate/profile_data/MyLinkedInProfile.pdf
-!simulate/config/classification_config.json
-!simulate/README.md
+# Simulation data (Public Demo - Allow all files)
+!simulate/
+!simulate/**
