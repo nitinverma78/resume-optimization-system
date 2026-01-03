@@ -572,7 +572,7 @@ Clear separation between phases:
 ## Project-Specific Rules
 
 ### Resume Classification
-- **Ownership detection**: If filename OR content has "Nitin Verma", it's user's document
+- **Ownership detection**: If filename OR content has the user's name, it's the user's document
 - **Type detection**: Analyze structure (sections, bullets, cover letter phrases)
 - **Word count heuristics**: 
   - Cover letters: < 600 words
@@ -614,5 +614,5 @@ Clear separation between phases:
 
 ## Notes & TODOs
 
-<!-- Nitin: Add your coding style repo references here -->
-<!-- Nitin: Update with any additional preferences as we work together -->
+<!-- User: Add your coding style repo references here -->
+<!-- User: Update with any additional preferences as we work together -->

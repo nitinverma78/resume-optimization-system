@@ -1,0 +1,24 @@
+#!/bin/bash
+# Git pre-commit hook: Validate no PII before committing
+
+echo "🔒 Running privacy validation before commit..."
+
+# Run the privacy validator with uv to ensure dependencies are available
+PYTHONPATH=. uv run python3 scripts/validate_git_privacy.py \
+  --check-user "Nitin Verma" \
+  --check-email "nitinverma78@gmail.com"
+
+# Capture exit code
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "❌ COMMIT BLOCKED: Privacy validation failed!"
+    echo "   Remove PII from the files above before committing."
+    echo "   To bypass (not recommended): git commit --no-verify"
+    echo ""
+    exit 1
+fi
+
+echo "✅ Privacy check passed - proceeding with commit"
+exit 0
