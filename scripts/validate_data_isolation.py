@@ -4,6 +4,14 @@ import json,os,sys
 from pathlib import Path
 from scripts.lib_validation import scan_files, norm
 
+# Manual .env loading (no external dependency)
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    for l in env_path.read_text().splitlines():
+        if '=' in l and not l.strip().startswith('#'):
+            k, v = l.strip().split('=', 1)
+            if not os.getenv(k): os.environ[k] = v.strip('"').strip("'")
+
 def get_data_dir(): return Path(os.getenv('DATA_DIR') or Path(__file__).parent.parent/"data")
 
 def main():
