@@ -5,7 +5,7 @@
 set -e
 
 echo "🏭 STEP 1: Mainainer (You) Builds the Image"
-# In real life, you'd do: docker build -t nitinverma/resume-optimizer:v1 .
+# In real life, you'd do: docker build -t generic-user/resume-optimizer:v1 .
 # For simulation, we'll just tag it locally
 docker build -t local-resume-optimizer:latest .
 echo "✅ Image built: local-resume-optimizer:latest"
@@ -48,7 +48,7 @@ services:
 EOF
 
 # 2. Key Config (Env file)
-cp /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/.env .
+cp $HOME/.gemini/antigravity/scratch/resume-optimization-system/.env .
 
 echo "✅ Environment created at $USER_DIR"
 echo "📂 Contents of user folder (Notice: NO CODE!):"
