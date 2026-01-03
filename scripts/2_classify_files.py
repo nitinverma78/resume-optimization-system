@@ -24,9 +24,9 @@ def get_cat(fp, name, email):
 
     if 'basic_linkedindataexport' in str(fp).lower(): return 'other','LinkedIn export'
     if any(x in fn for x in ['work search','job search']): return 'jd','Job search log'
-    if any(x in fn for x in ['companies','top10k','top50k','jobsearchresults']): return 'company','Company list'
+    if any(x in fn for x in ['companies','top10k','top50k','jobsearchresults','professionalservices','hightech']): return 'company','Company list'
     if ('exec' in fn and 'search' in fn) or 'recruiter' in fn: return 'recruiter','Recruiter info'
-    if ext in ['.xlsx','.csv']: return 'other','Spreadsheet'
+    if ext in ['.xlsx','.csv'] and 'tracking' not in fn: return 'other','Spreadsheet'
     if ext not in ['.pdf','.docx','.doc','.pptx','.txt']: return 'other',f'Unsupported {ext}'
 
     t = get_txt(); 

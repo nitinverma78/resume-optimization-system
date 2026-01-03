@@ -31,7 +31,7 @@ def scan_files(files, check_name, check_email, mode='contains'):
         has_email_in_fn = email_norm in fn_lower
         
         # Content check (skip unsupported formats)
-        if fp.suffix.lower() not in ['.pdf','.txt','.md','.html','.json','.py','.sh','.yml','.yaml']:
+        if fp.suffix.lower() not in ['.pdf','.docx','.doc','.txt','.md','.html','.json','.py','.sh','.yml','.yaml']:
             if mode == 'contains' and not has_name_in_fn:
                 violations.append(f"{fp.name} (unsupported format, filename check failed)")
             continue

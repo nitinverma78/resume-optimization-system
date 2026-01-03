@@ -29,7 +29,8 @@ def check_env(mode="normal", clean=False):
     for d in ["data", "data/supply/profile_data", "data/demand", "data/matching", "simulate", "config"]: (ROOT/d).mkdir(parents=True, exist_ok=True)
     if (env:=ROOT/'.env').exists():
         for l in env.read_text().splitlines():
-             if '=' in l and not l.strip().startswith('#'): k,v=l.strip().split('=',1); os.environ.setdefault(k,v.strip('"'))
+             if '=' in l and not l.strip().startswith('#'): k,v=l.strip().split('=',1); os.environ[k]=v.strip('"')
+    if rf := os.getenv('RESUME_FOLDER'): os.environ['RESUME_FOLDER'] = os.path.expanduser(rf)
 
     if not os.getenv('RESUME_FOLDER') or not Path(os.path.expanduser(os.getenv('RESUME_FOLDER'))).exists(): msgs.append("❌ Missing/Invalid RESUME_FOLDER")
     if not os.getenv('USER_NAME'): msgs.append("⚠️  Missing USER_NAME")
