@@ -14,9 +14,7 @@ This will install the `pre-commit` hook into `.git/hooks/`.
 
 ## What Gets Checked
 
-The hook runs `scripts/validate_git_privacy.py` before every commit, scanning all git-tracked files for:
-- Name: "Nitin Verma"
-- Email: "nitinverma78@gmail.com"
+The hook runs `scripts/validate_git_privacy.py` before every commit, scanning all git-tracked files for configured PII (name and email).
 
 If any PII is found, the commit is **blocked** until you fix the violations.
 

@@ -11,8 +11,8 @@ def scan_files(files, check_name, check_email, mode='contains'):
     
     Args:
         files: List of Path objects to scan
-        check_name: Name to check for (e.g., "Nitin Verma")
-        check_email: Email to check for (e.g., "nitinverma78@gmail.com")
+        check_name: Name to check for (e.g., "Jane Doe")
+        check_email: Email to check for (e.g., "jane.doe@example.com")
         mode: 'contains' (ensure PII exists) or 'absent' (ensure PII doesn't exist)
     
     Returns:

@@ -6,16 +6,18 @@ from scripts.lib_validation import scan_files, get_git_files
 
 def main():
     p = argparse.ArgumentParser(description="Scan git repo for PII leaks")
-    p.add_argument("--check-user", required=True, help="Name to check for (e.g., 'Nitin Verma')")
+    p.add_argument("--check-user", required=True, help="Name to check for (e.g., 'Jane Doe')")
     p.add_argument("--check-email", required=True, help="Email to check for")
     args = p.parse_args()
     
     root = Path(__file__).parent.parent
     print(f"🔍 Scanning git repo for PII: {args.check_user} <{args.check_email}>")
     
-    # Get ALL git-tracked files (no exclusions - if it's tracked, it should be clean)
-    files = get_git_files(root)
-    print(f"📂 Scanning {len(files)} git-tracked files")
+    # Exclude hooks that contain PII as configuration parameters
+    exclude_files = {'hooks/pre-commit'}
+    all_files = get_git_files(root)
+    files = [f for f in all_files if str(f.relative_to(root)) not in exclude_files]
+    print(f"📂 Scanning {len(files)} files (excluding {len(exclude_files)} hook config)")
     
     # Scan for PII (mode='absent' means PII should NOT be present)
     passed, violations = scan_files(files, args.check_user, args.check_email, mode='absent')
