@@ -31,7 +31,10 @@ def scan_files(files, check_name, check_email, mode='contains'):
         has_email_in_fn = email_norm in fn_lower
         
         # Content check (skip unsupported formats)
-        if fp.suffix.lower() not in ['.pdf','.docx','.doc','.txt','.md','.html','.json','.py','.sh','.yml','.yaml']:
+        supported_exts = ['.pdf','.docx','.doc','.txt','.md','.html','.json','.py','.sh','.yml','.yaml']
+        explicit_files = ['.gitignore', 'pre-commit', 'Dockerfile']
+        
+        if fp.suffix.lower() not in supported_exts and fp.name not in explicit_files:
             if mode == 'contains' and not has_name_in_fn:
                 violations.append(f"{fp.name} (unsupported format, filename check failed)")
             continue
@@ -53,6 +56,45 @@ def scan_files(files, check_name, check_email, mode='contains'):
             if has_name or has_email or has_name_in_fn or has_email_in_fn:
                 violations.append(f"{fp.name} (contains {check_name if has_name or has_name_in_fn else check_email})")
     
+    return len(violations) == 0, violations
+
+def scan_extensions(files, prohibited_exts):
+    """Scan for files with prohibited extensions."""
+    violations = []
+    for fp in files:
+        # Whitelist known dummy files
+        if fp.name == "MyLinkedInProfile.pdf": continue
+        
+        if fp.suffix.lower() in prohibited_exts:
+            violations.append(f"{fp.name} (prohibited extension {fp.suffix})")
+    return len(violations) == 0, violations
+
+def scan_secrets(files):
+    """Scan for common secret patterns (naive check)."""
+    violations = []
+    # Patterns: API keys, private keys, passwords
+    patterns = {
+        "AWS Key": r"AKIA[0-9A-Z]{16}",
+        "Private Key": r"-----BEGIN PRIVATE KEY-----",
+        "Generic Secret": r"(api|secret|access)[_-]?(key|token)\s*[:=]\s*['\"][a-zA-Z0-9_\-]{8,}['\"]",
+        "Password": r"password\s*[:=]\s*['\"][^'\"]{6,}['\"]"
+    }
+    
+    for fp in files:
+        if not fp.exists() or fp.is_dir(): continue
+        # Skip binary/large files for regex check to avoid performance hit
+        if fp.suffix.lower() in ['.pdf','.docx','.png','.jpg','.zip','.pyc']: continue
+        
+        try:
+            content = fp.read_text(errors='ignore')
+            for name, pat in patterns.items():
+                if re.search(pat, content, re.IGNORECASE):
+                    # Filter out false positives (e.g. example configs, tests, and THIS file)
+                    if "example" in fp.name.lower() or "test" in fp.name.lower() or fp.name == "lib_validation.py": continue
+                    violations.append(f"{fp.name} (potential {name})")
+                    break
+        except: continue
+            
     return len(violations) == 0, violations
 
 def get_git_files(root):

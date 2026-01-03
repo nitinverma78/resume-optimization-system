@@ -47,8 +47,11 @@ services:
       - ./data:/app/data
 EOF
 
-# 2. Key Config (Env file)
-cp $HOME/.gemini/antigravity/scratch/resume-optimization-system/.env .
+# 2. Key Config (Env file template)
+# We copy the example, but the user must fill it in.
+cp "$PWD/.env.example" ./.env
+
+echo "⚠️ NOTE: We copied .env.example to .env. You MUST edit it with your details!"
 
 echo "✅ Environment created at $USER_DIR"
 echo "📂 Contents of user folder (Notice: NO CODE!):"

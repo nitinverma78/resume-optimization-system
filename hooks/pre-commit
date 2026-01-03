@@ -5,8 +5,8 @@ echo "🔒 Running privacy validation before commit..."
 
 # Run the privacy validator with uv to ensure dependencies are available
 PYTHONPATH=. uv run python3 scripts/validate_git_privacy.py \
-  --check-user "Nitin Verma" \
-  --check-email "nitinverma78@gmail.com"
+  --check-user "Nitin" \
+  --check-email "nitin"
 
 # Capture exit code
 EXIT_CODE=$?

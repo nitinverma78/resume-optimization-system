@@ -15,16 +15,16 @@ cd "$TEST_DIR"
 echo "📁 Created clean directory: $TEST_DIR"
 
 # Copy only Docker-related files
-cp /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/Dockerfile .
-cp /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/docker-compose.yml .
-cp /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/pyproject.toml .
-cp /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/uv.lock .
-cp /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/main.py .
-cp /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/.env .
-cp -r /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/scripts .
-cp -r /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/hooks .
-cp -r /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/simulate .
-cp -r /Users/nitin/.gemini/antigravity/scratch/resume-optimization-system/config .
+cp "$PWD/Dockerfile" .
+cp "$PWD/docker-compose.yml" .
+cp "$PWD/pyproject.toml" .
+cp "$PWD/uv.lock" .
+cp "$PWD/main.py" .
+cp "$PWD/.env" .
+cp -r "$PWD/scripts" .
+cp -r "$PWD/hooks" .
+cp -r "$PWD/simulate" .
+cp -r "$PWD/config" .
 
 echo "✅ Files copied"
 echo ""

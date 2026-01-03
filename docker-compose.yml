@@ -25,9 +25,9 @@ services:
 
     volumes:
       # 1. INPUT: Map host resume folder to /input_resumes
-      # NOTE: Use absolute path, not ~. Expand ~ to full path in .env
-      # Example: /Users/nitin/Downloads/MyResumeResources
-      - ${HOME}/Downloads/MyResumeResources:/input_resumes:ro
+      # NOTE: Use absolute path, or valid env var expansion
+      # Example: /Users/username/Downloads/MyResumeResources
+      - ${RESUME_FOLDER}:/input_resumes:ro
 
       # 2. OUTPUT: Persist generated data to local ./data folder
       - ./data:/app/data
