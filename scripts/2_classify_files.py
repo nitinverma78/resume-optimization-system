@@ -17,7 +17,7 @@ def get_data_dir(): return Path(os.getenv('DATA_DIR') or Path(__file__).parent.p
 
 def get_cat(fp, name, email):
     fn, ext, txt = fp.name.lower(), fp.suffix.lower(), None
-    def get_txt(): nonlocal txt; txt = extract(fp) if txt is None else txt; return txt
+    def get_txt(): nonlocal txt; txt = extract(fp).lower() if txt is None else txt; return txt
 
     for f,c in FOLDERS.items(): 
         if f in fp.parts: return c, f"In {f} folder"

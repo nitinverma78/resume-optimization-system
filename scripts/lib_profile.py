@@ -1,151 +1,63 @@
-"""Shared library for parsing LinkedIn profiles (Steps 5 & 6)."""
+"""Shared library for parsing LinkedIn profiles."""
 import json,re,os
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List,Dict,NewType
-
-# Domain Types (RL-book pattern)
-CompanyName = NewType('CompanyName', str)
-SkillName   = NewType('SkillName', str)
-PatentText  = NewType('PatentText', str)
-PubText     = NewType('PubText', str)
+from typing import List,Dict
 
 @dataclass(frozen=True)
-class Experience:
-    """Work experience entry."""
-    company: str
-    title: str
-    duration: str
-    location: str
-    description: str
-    achievements: List[str]
-
+class Experience: company: str; title: str; duration: str; location: str; description: str; achievements: List[str]
 @dataclass(frozen=True)
-class Education:
-    """Education entry."""
-    school: str
-    degree: str
-    field: str
-    years: str
-
+class Education: school: str; degree: str; field: str; years: str
 @dataclass(frozen=True)
-class Profile:
-    """Complete professional profile."""
-    name: str
-    headline: str
-    summary: str
-    contact: Dict[str, str]
-    skills: List[str]
-    experiences: List[Experience]
-    education: List[Education]
-    patents: List[str]
-    publications: List[str]
+class Profile: name: str; headline: str; summary: str; contact: Dict[str, str]; skills: List[str]; experiences: List[Experience]; education: List[Education]; patents: List[str]; publications: List[str]
 
-def extract_sec(txt: str, start: str, end: str=None) -> str:
-    """Extract text between section headers."""
-    pat = f"{re.escape(start)}(.*?)({'(' + re.escape(end) + ')' if end else '$'})"
-    m = re.search(pat, txt, re.DOTALL)
+def txt_btwn(txt, s, e=None):
+    m = re.search(f"{re.escape(s)}(.*?)({'(' + re.escape(e) + ')' if e else '$'})", txt, re.DOTALL)
     return m.group(1).strip() if m else ""
 
-def _parse_exp(txt: str, custom_cos: Dict[str,str]=None) -> List[Experience]:
-    """Parse work experience section."""
-    sec = extract_sec(txt, "Experience", "Education")
-    exps = []
-    
-    cos = custom_cos or {"Example Corp": r"Example Corp\nTitle\n(.*?)(?=NextCompany|$)"}
-    
+def parse_exp(txt, cfg_cos=None):
+    sec = txt_btwn(txt, "Experience", "Education"); exps = []
+    cos = cfg_cos or {"Example Corp": r"Example Corp\nTitle\n(.*?)(?=NextCompany|$)"}
     for co, pat in cos.items():
-        m = re.search(pat, sec, re.DOTALL)
-        if m:
-            etxt = m.group(0).strip()
-            lines = etxt.split('\n')
-            title = lines[1] if len(lines) > 1 else "See details"
-            dur_m = re.search(r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}.*?(?:Present|\d{4}))', etxt[:200])
-            dur = dur_m.group(1) if dur_m else "See parsed data"
-            exps.append(Experience(company=co, title=title, duration=dur,
-                                   location="", description=etxt, achievements=[]))
+        if m := re.search(pat, sec, re.DOTALL):
+            etxt = m.group(0).strip(); lines = etxt.split('\n')
+            dur = (re.search(r'((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}.*?(?:Present|\d{4}))', etxt[:200]) or re.match(r'()',"")).group(1) or "See parsed"
+            exps.append(Experience(company=co, title=lines[1] if len(lines)>1 else "Title", duration=dur, location="", description=etxt, achievements=[]))
     return exps
 
-def _parse_edu(txt: str, custom_edu: List[Dict]=None) -> List[Education]:
-    """Parse education section."""
-    sec = extract_sec(txt, "Education", "Page") or extract_sec(txt, "Education", None)
-    edus = []
-    
-    if custom_edu:
-        for item in custom_edu:
-            kw1 = item.get('keyword', '')
-            kw2 = item.get('keyword2', '')
-            if kw1 in sec or kw2 in sec:
-                edus.append(Education(school=item['school'], degree=item['degree'],
-                                      field=item['field'], years=item['years']))
-    elif "University" in sec:
-        edus.append(Education(school="University Name", degree="Degree Name",
-                              field="Field of Study", years="2010-2014"))
+def parse_edu(txt, cfg_edu=None):
+    sec = txt_btwn(txt, "Education", "Page") or txt_btwn(txt, "Education", None); edus = []
+    if cfg_edu:
+        for i in cfg_edu:
+            if i.get('keyword','') in sec or i.get('keyword2','') in sec: edus.append(Education(school=i['school'], degree=i['degree'], field=i['field'], years=i['years']))
+    elif "University" in sec: edus.append(Education("University Name", "Degree", "Field", "2010-2014"))
     return edus
 
-def _merge_lines(txt: str) -> List[str]:
-    """Merge lines for patents/publications."""
-    items, cur = [], ""
-    for line in txt.split('\n'):
-        line = line.strip()
-        if not line: continue
-        if cur and not line[0].isupper(): cur += " " + line
-        elif cur:
-            items.append(cur)
-            cur = line
-        else: cur = line
-    if cur: items.append(cur)
-    return items
+def merge_lns(txt):
+    i=[]; c=""
+    for l in [x.strip() for x in txt.split('\n') if x.strip()]:
+        if c and not l[0].isupper(): c+=" "+l
+        else: 
+            if c: i.append(c)
+            c=l
+    if c: i.append(c)
+    return i
 
-def parse_profile(raw: str, name: str=None) -> Profile:
-    """Parse LinkedIn profile text into structured data."""
+def parse_profile(raw, name=None):
     name = name or os.getenv('USER_NAME', 'Your Name')
+    cfg_p = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"parsing_config.json"
+    cfg = json.loads(cfg_p.read_text()) if cfg_p.exists() else {}
     
-    # Load custom config (if exists)
-    cfg_path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"parsing_config.json"
-    cfg = {}
-    if cfg_path.exists():
-        try:
-            with open(cfg_path, 'r', encoding='utf-8') as f: cfg = json.load(f)
-            print(f"Loaded custom parsing config from {cfg_path.name}")
-        except Exception as e:
-            print(f"Warning: Could not load config {cfg_path}: {e}")
+    raw = re.sub(r'Page \d+ of \d+', '', re.sub(r'\n\s*Page \d+ of \d+\s*\n', '\n', raw))
+    nm = getattr(re.search(rf"({re.escape(name)})", raw), 'group', lambda x:name)(1)
+    hl = getattr(re.search(rf"{re.escape(name)}\n(.*?)\n(?:Greater|Summary)", raw, re.DOTALL), 'group', lambda x:"")(1).strip().replace('\n', ' ')
     
-    # Clean text
-    raw = re.sub(r'\n\s*Page \d+ of \d+\s*\n', '\n', raw)
-    raw = re.sub(r'Page \d+ of \d+', '', raw)
+    ct = {}
+    if m:=re.search(r"([\w\.-]+@[\w\.-]+\.\w+)", raw): ct['email']=m.group(1)
+    if m:=re.search(r"www\.linkedin\.com/in/([\w-]+)", raw): ct['linkedin']=f"linkedin.com/in/{m.group(1)}"
+    if m:=re.search(r"([\w-]+\.ai) \(Company\)", raw): ct['company_website']=m.group(1)
 
-    # Name
-    nm = re.search(rf"({re.escape(name)})", raw)
-    nm = nm.group(1) if nm else name
-    
-    # Headline
-    hl = re.search(rf"{re.escape(name)}\n(.*?)\n(?:Greater|Summary)", raw, re.DOTALL)
-    hl = hl.group(1).strip().replace('\n', ' ') if hl else ""
-    
-    # Summary
-    summ = extract_sec(raw, "Summary", "Experience").strip()
-    
-    # Contact
-    contact = {}
-    if em := re.search(r"([\w\.-]+@[\w\.-]+\.\w+)", raw): contact['email'] = em.group(1)
-    if li := re.search(r"www\.linkedin\.com/in/([\w-]+)", raw): contact['linkedin'] = f"linkedin.com/in/{li.group(1)}"
-    if ws := re.search(r"([\w-]+\.ai) \(Company\)", raw): contact['company_website'] = ws.group(1)
-    
-    # Skills
-    sk_sec = extract_sec(raw, "Top Skills", "Publications")
-    skills = [s.strip() for s in sk_sec.split('\n') if s.strip()]
-    
-    # Experience & Education using config
-    exps = _parse_exp(raw, cfg.get('companies'))
-    edus = _parse_edu(raw, cfg.get('education'))
-    
-    # Patents & Publications
-    pats = _merge_lines(extract_sec(raw, "Patents", name))
-    pubs = _merge_lines(extract_sec(raw, "Publications", "Patents"))
-    
-    return Profile(
-        name=nm, headline=hl, summary=summ, contact=contact, skills=skills,
-        experiences=exps, education=edus,
-        patents=pats[:4], publications=pubs[:2]
-    )
+    return Profile(name=nm, headline=hl, summary=txt_btwn(raw, "Summary", "Experience"), contact=ct, 
+                   skills=[s.strip() for s in txt_btwn(raw,"Top Skills","Publications").split('\n') if s.strip()],
+                   experiences=parse_exp(raw, cfg.get('companies')), education=parse_edu(raw, cfg.get('education')),
+                   patents=merge_lns(txt_btwn(raw,"Patents",name))[:4], publications=merge_lns(txt_btwn(raw,"Publications","Patents"))[:2])

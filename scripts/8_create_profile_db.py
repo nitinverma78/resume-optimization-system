@@ -3,50 +3,19 @@
 import json,os
 from pathlib import Path
 from dataclasses import asdict
-from lib_profile import parse_profile, Profile
+from scripts.lib_profile import parse_profile
 
-def get_data_dir():
-    if d := os.getenv('DATA_DIR'): return Path(d)
-    return Path(__file__).parent.parent/"data"
+def get_data_dir(): return Path(os.getenv('DATA_DIR') or Path(__file__).parent.parent/"data")
 
-def main(
-    inp: Path = None,
-    cfg: Path = Path(__file__).parent.parent/"data"/"supply"/"profile_data"/"parsing_config.json",
-    out: Path = None,
-    name: str = None  # User's full name (default: USER_NAME env var)
-) -> Profile:
-    """Main execution."""
-    data_dir = get_data_dir()
-    if not inp: inp = data_dir/"supply"/"profile_data"/"linkedin-profile-parsed.json"
-    if not out: out = data_dir/"supply"/"profile_data"/"profile-structured.json"
-    name = os.getenv('USER_NAME', name)
+def main():
+    dd=get_data_dir(); inp,out = dd/"supply"/"profile_data"/"linkedin-profile-parsed.json", dd/"supply"/"profile_data"/"profile-structured.json"
+    if not inp.exists(): return
     
-    with open(inp, 'r', encoding='utf-8') as f: data = json.load(f)
-    
-    print("Creating structured profile database...")
-    p = parse_profile(data['raw_text'], name)
-    
-    # Convert to dict
-    pdict = {
-        "name": p.name, "headline": p.headline, "summary": p.summary,
-        "contact": p.contact, "skills": p.skills,
-        "experiences": [asdict(e) for e in p.experiences],
-        "education": [asdict(e) for e in p.education],
-        "patents": p.patents, "publications": p.publications,
-    }
+    print("Structuring profile...")
+    p = parse_profile(json.loads(inp.read_text())['raw_text'], os.getenv('USER_NAME'))
     
     out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out, 'w', encoding='utf-8') as f:
-        json.dump(pdict, f, indent=2, ensure_ascii=False)
-    
-    print(f"✓ Structured profile saved to: {out}")
-    print(f"\n=== Profile Summary ===")
-    print(f"Name: {p.name}")
-    print(f"Headline: {p.headline[:100]}...")
-    print(f"Skills: {len(p.skills)} extracted")
-    print(f"Experiences: {len(p.experiences)} companies")
-    print(f"Education: {len(p.education)} degrees")
-    print(f"Patents: {len(p.patents)}")
-    print(f"Publications: {len(p.publications)}")
+    with open(out, 'w') as f: key_d=asdict(p); key_d['experiences']=[asdict(e) for e in p.experiences]; key_d['education']=[asdict(e) for e in p.education]; json.dump(key_d, f, indent=2)
+    print(f"✓ Saved to {out}\n{p.name}: {len(p.skills)} skills, {len(p.experiences)} jobs")
 
 if __name__ == "__main__": main()

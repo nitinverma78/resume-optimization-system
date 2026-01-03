@@ -1,99 +1,38 @@
 #!/usr/bin/env python3
-"""[Supply Public Profile] Step 9: Generate markdown profile from parsed data."""
+"""[Supply Public Profile] Step 9: Generate markdown."""
 import json,os,sys,re
 from pathlib import Path
-from lib_profile import Profile, parse_profile
+from scripts.lib_profile import parse_profile
 
-def render_md(p: Profile) -> str:
-    """Render Profile object to Markdown."""
-    lines = []
-    
-    # Header
-    lines.append(f"# {p.name}")
-    lines.append(f"**{p.headline}**")
-    lines.append("")
-    
-    # Contact
-    parts = []
-    if 'email' in p.contact:           parts.append(f"📧 {p.contact['email']}")
-    if 'linkedin' in p.contact:        parts.append(f"🔗 [{p.contact['linkedin']}](https://www.{p.contact['linkedin']})")
-    if 'company_website' in p.contact: parts.append(f"🌐 {p.contact['company_website']}")
-    lines.append(" | ".join(parts))
-    lines.append("")
-    
-    # Summary
-    if p.summary:
-        lines.extend(["## Professional Summary", p.summary, ""])
-        
-    # Skills
-    if p.skills:
-        lines.extend(["## Top Skills", ", ".join(p.skills), ""])
-        
-    # Experience
+def render(p):
+    L = [f"# {p.name}", f"**{p.headline}**", ""]
+    c = []
+    if 'email' in p.contact: c.append(f"📧 {p.contact['email']}")
+    if 'linkedin' in p.contact: c.append(f"🔗 [{p.contact['linkedin']}](https://www.{p.contact['linkedin']})")
+    if 'company_website' in p.contact: c.append(f"🌐 {p.contact['company_website']}")
+    L.append(" | ".join(c) + "\n")
+    if p.summary: L+=[f"## Professional Summary\n{p.summary}\n"]
+    if p.skills: L+=[f"## Top Skills\n{', '.join(p.skills)}\n"]
     if p.experiences:
-        lines.append("## Professional Experience")
-        for exp in p.experiences:
-            lines.append(f"### {exp.company}")
-            lines.append(f"**{exp.title}** | {exp.duration}")
-            if exp.description:
-                desc_lines = exp.description.split('\n')
-                fmt = []
-                for line in desc_lines:
-                    line = line.strip()
-                    if not line: continue
-                    is_date = re.search(r'\d{4}\s*-\s*\d{4}', line)
-                    title_kw = any(t in line for t in ['Manager','Director','VP','Head','Scientist','Officer','Founder','Researcher','Engineer'])
-                    is_title = len(line) < 80 and title_kw and not line.startswith(('•', '-'))
-                    if is_date or is_title: fmt.append(f"\n**{line}**\n")
-                    else:                   fmt.append(f"> {line}")
-                lines.append("\n".join(fmt))
-            lines.append("")
-            
-    # Education
+        L+=["## Professional Experience"]
+        for e in p.experiences:
+            L+=[f"### {e.company}\n**{e.title}** | {e.duration}"]
+            d=[]
+            for l in [x.strip() for x in e.description.split('\n') if x.strip()]:
+                d.append(f"\n**{l}**\n" if re.search(r'\d{4}.*\d{4}',l) or (len(l)<80 and any(t in l for t in ['Manager','Director','Engineer']) and not l.startswith(('-','•'))) else f"> {l}")
+            L+=["\n".join(d)+"\n"]
     if p.education:
-        lines.append("## Education")
-        for edu in p.education:
-            lines.extend([f"### {edu.school}", f"{edu.degree}, {edu.field}", f"_{edu.years}_", ""])
-            
-    # Patents & Publications
-    if p.patents:
-        lines.append("## Patents")
-        lines.extend([f"- {x}" for x in p.patents])
-        lines.append("")
-    if p.publications:
-        lines.append("## Publications")
-        lines.extend([f"- {x}" for x in p.publications])
-        lines.append("")
-        
-    return "\n".join(lines)
+        L+=["## Education"] + [f"### {e.school}\n{e.degree}, {e.field}\n_{e.years}_\n" for e in p.education]
+    for k,v in [("Patents",p.patents),("Publications",p.publications)]:
+        if v: L+=[f"## {k}"] + [f"- {x}" for x in v] + [""]
+    return "\n".join(L)
 
-def get_data_dir():
-    if d := os.getenv('DATA_DIR'): return Path(d)
-    return Path(__file__).parent.parent/"data"
-
-def main(
-    inp: Path = None,
-    out: Path = None,
-    name: str = None
-):
-    """Main execution."""
-    data_dir = get_data_dir()
-    if not inp: inp = data_dir/"supply"/"profile_data"/"linkedin-profile-parsed.json"
-    if not out: out = data_dir/"supply"/"profile_data"/"linkedin-profile.md"
-    name = os.getenv('USER_NAME', name)
-
-    if not inp.exists():
-        print(f"Error: Source file not found: {inp}", file=sys.stderr)
-        return
-
-    with open(inp, 'r', encoding='utf-8') as f: data = json.load(f)
-
-    print("Generating Markdown profile...")
-    p = parse_profile(data['raw_text'], name)
+def main():
+    dd=Path(os.getenv('DATA_DIR') or Path(__file__).parent.parent/"data"); inp,out = dd/"supply"/"profile_data"/"linkedin-profile-parsed.json", dd/"supply"/"profile_data"/"linkedin-profile.md"
+    if not inp.exists(): return
     
-    md = render_md(p)
-    
-    with open(out, 'w', encoding='utf-8') as f: f.write(md)
-    print(f"✓ Markdown profile saved to: {out}")
+    print("Generating MD...")
+    with open(out,'w') as f: f.write(render(parse_profile(json.loads(inp.read_text())['raw_text'], os.getenv('USER_NAME'))))
+    print(f"✓ Saved to {out}")
 
-if __name__ == "__main__": main()
+if __name__=="__main__": main()

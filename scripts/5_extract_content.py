@@ -59,7 +59,7 @@ def parse_exp(lines):
     return {'recent':recs, 'earlier':earls}
 
 def process(fp):
-    txt = extract(fp); secs = identify_sections(txt.split('\n'))
+    txt = extract(fp).lower(); secs = identify_sections(txt.split('\n'))
     data = {"source_file":fp.name, "role_intent":secs.get("Summary",{}).get("header","General"), "summary":"\n".join(secs.get("Summary",{}).get("content",[])), "skills":{}, "experience":{'recent':[],'earlier':[]} }
     if "Skills" in secs: data["skills"] = classify_skills(secs["Skills"]['content'])
     if "Experience" in secs: data["experience"] = parse_exp(secs["Experience"]['content'])

@@ -1,118 +1,34 @@
 #!/usr/bin/env python3
-"""[Matching Engine] Step 11: Calculate Gap Analysis between Profile and JDs."""
-import json, sys, re, math, os
+"""[Matching Engine] Step 11: Calculate Gap Analysis."""
+import json,sys,re,os
 from pathlib import Path
 from collections import Counter
-import argparse
-
-def get_data_dir():
-    if d := os.getenv('DATA_DIR'): return Path(d)
-    return Path(__file__).parent.parent/"data"
-
-# ROOT = Path(__file__).parent.parent
-# (Module constants removed in favor of instance variables)
+def get_data_dir(): return Path(os.getenv('DATA_DIR') or Path(__file__).parent.parent/"data")
 
 class Matcher:
     def __init__(self):
-        self.data_dir = get_data_dir()
-        self.data_supply = self.data_dir/"supply"/"profile_data"
-        self.data_demand = self.data_dir/"demand"
-        self.out_dir     = self.data_dir/"matching"
-        
-        self.out_dir.mkdir(parents=True, exist_ok=True)
-        self.profile = self._load_profile()
-        self.jds     = self._load_jds()
+        dd=get_data_dir(); self.sup, self.dem = dd/"supply"/"profile_data", dd/"demand"
+        self.out=dd/"matching"; self.out.mkdir(parents=True, exist_ok=True)
+        if not (self.sup/"profile-structured.json").exists() or not (self.dem/"1_jd_database.json").exists(): sys.exit("Missing inputs")
+        self.prof=json.loads((self.sup/"profile-structured.json").read_text())
+        self.jds=json.loads((self.dem/"1_jd_database.json").read_text()).get('roles',[])
 
-    def _load_profile(self):
-        """Load structured profile."""
-    def _load_profile(self):
-        """Load structured profile."""
-        path = self.data_supply/"profile-structured.json"
-        if not path.exists():
-            print(f"❌ Missing profile: {path}")
-            sys.exit(1)
-        with open(path) as f: return json.load(f)
-
-    def _load_jds(self):
-        """Load JDs database."""
-    def _load_jds(self):
-        """Load JDs database."""
-        path = self.data_demand/"1_jd_database.json"
-        if not path.exists():
-            print(f"❌ Missing JD database: {path}")
-            sys.exit(1)
-        with open(path) as f:
-            data = json.load(f)
-            # Handle structure: {"roles": [...]} 
-            return data.get('roles', [])
-
-    def extract_keywords(self, text):
-        """Simple keyword extractor (normalized)."""
-        if not text: return set()
-        # Basic tokenization: split by non-alphanumeric, lowercase
-        tokens = re.findall(r'\b[a-z]{2,50}\b', text.lower())
-        # Filter stopwords (mini list)
-        stopwords = {'the','and','for','with','this','that','from','have','are','was','can','will','not','but','all','any','your','their','our','each','these','those','has','its','other','which','what','when','where','why','how'}
-        return set(t for t in tokens if t not in stopwords)
-
-    def calculate_match(self, profile_text, jd_text):
-        """Calculate overlap score."""
-        p_keywords = self.extract_keywords(profile_text)
-        j_keywords = self.extract_keywords(jd_text)
-        
-        if not j_keywords: return 0, set(), set()
-        
-        overlap  = p_keywords & j_keywords
-        missing  = j_keywords - p_keywords
-        
-        # Jaccard-ish score: Overlap / JD size (how much of JD is covered?)
-        # We care about covering JD requirements, not about extra stuff in resume.
-        score = (len(overlap) / len(j_keywords)) * 100
-        return round(score, 1), overlap, missing
+    def kw(self, txt): return {x for x in re.findall(r'\b[a-z]{2,50}\b', (txt or "").lower()) if x not in {'and','the','for','with','this','that','from','have','are','was','can','will','not','but'}} 
 
     def run(self):
-        print("🚀 Running Matching Engine...")
+        print("🚀 Matching...")
+        p_txt = " ".join([str(v) for k,v in self.prof.items() if isinstance(v,str)] + [x['title']+" "+x['description'] for x in self.prof['experiences']] + [x['degree'] for x in self.prof['education']])
+        p_toks = self.kw(p_txt); res=[]
         
-        # Flatten profile for matching
-        p_data = self.profile
-        p_text = f"{p_data.get('headline','')} {p_data.get('summary','')} "
-        for exp in p_data.get('experience', []):
-            p_text += f"{exp.get('title','')} {exp.get('company','')} {exp.get('description','')} "
-        for edu in p_data.get('education', []):
-            p_text += f"{edu.get('school','')} {edu.get('degree','')} "
-            
-        results = []
         for jd in self.jds:
-            jd_text = jd.get('content', '')
-            score, overlap, missing = self.calculate_match(p_text, jd_text)
-            
-            res = {
-                "id": jd.get('id'),
-                "filename": jd.get('filename'),
-                "score": score,
-                "missing_keywords": sorted(list(missing)),
-                "overlap_keywords": sorted(list(overlap))
-            }
-            results.append(res)
-            print(f"  • {jd.get('filename')}: {score}% Match")
-
-        # Save results
-        # Save results
-        out_path = self.out_dir/"11_gap_analysis.json"
-        with open(out_path, 'w') as f: json.dump(results, f, indent=2)
-        print(f"✅ Gap Analysis saved to: {out_path}")
+            j_toks = self.kw(jd.get('raw_text') or jd.get('content',''))
+            ov = p_toks & j_toks; sc = round(len(ov)/len(j_toks)*100,1) if j_toks else 0
+            res.append({"id":jd.get('id'),"filename":jd.get('id'),"score":sc,"missing":sorted(list(j_toks-p_toks)),"overlap":sorted(list(ov))})
+            print(f"  • {jd.get('id')}: {sc}% Match")
         
-        # Generate Markdown Report
-        # Generate Markdown Report
-        md_path = self.out_dir/"11_gap_analysis_report.md"
-        with open(md_path, 'w') as f:
-            f.write("# Gap Analysis Report\n\n")
-            for r in results:
-                f.write(f"## {r['filename']} (Score: {r['score']}%)\n")
-                f.write(f"### Missing Keywords ({len(r['missing_keywords'])})\n")
-                f.write(", ".join(r['missing_keywords'][:50])) # Limit output
-                f.write("\n\n")
-        print(f"✅ Report saved to: {md_path}")
+        (self.out/"11_gap_analysis.json").write_text(json.dumps(res, indent=2))
+        rpt = "# Gap Analysis\n\n"+"\n\n".join([f"## {r['filename']} ({r['score']}%)\n### Missing\n{', '.join(r['missing'][:50])}" for r in res])
+        (self.out/"11_gap_analysis_report.md").write_text(rpt)
+        print(f"✅ Saved to {self.out}")
 
-if __name__ == "__main__":
-    Matcher().run()
+if __name__ == "__main__": Matcher().run()

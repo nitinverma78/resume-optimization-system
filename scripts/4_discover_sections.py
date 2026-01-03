@@ -1,107 +1,39 @@
 #!/usr/bin/env python3
-"""[Supply Knowledge Extraction] Step 4: Discover unique section headers in resumes."""
-import json,os,re,pymupdf
+"""[Supply Knowledge Extraction] Step 4: Discover unique section headers."""
+import json,re,os,sys
 from pathlib import Path
 from collections import Counter
-from typing import List,Dict,Set
+from scripts.lib_extract import extract
 
-# Standard headers to always catch
-STD_HEADERS = {
-    'EXPERIENCE', 'WORK HISTORY', 'EDUCATION', 'SKILLS', 'PROJECTS',
-    'SUMMARY', 'OBJECTIVE', 'PUBLICATIONS', 'CERTIFICATIONS', 'AWARDS',
-    'PROFESSIONAL EXPERIENCE', 'TECHNICAL SKILLS', 'CORE COMPETENCIES'
-}
+STD_HEADERS = {'EXPERIENCE','WORK HISTORY','EDUCATION','SKILLS','PROJECTS','SUMMARY','OBJECTIVE','PUBLICATIONS','CERTIFICATIONS','AWARDS','PROFESSIONAL EXPERIENCE','TECHNICAL SKILLS','CORE COMPETENCIES'}
+def get_data_dir(): return Path(os.getenv('DATA_DIR') or Path(__file__).parent.parent/"data")
 
-def extract_headers(txt: str) -> List[str]:
-    """Identify lines that look like section headers."""
-    headers = []
-    for line in txt.split('\n'):
-        line = line.strip()
-        if not line: continue
-        
-        is_short  = len(line) < 40
-        is_upper  = line.isupper()
-        not_bullet = not re.match(r'^[•\-\*\d\.]', line)
-        is_std    = line.upper() in STD_HEADERS
-        
-        if (is_short and is_upper and not_bullet) or is_std:
-            clean = re.sub(r'[:\.]+$', '', line).strip()
-            if len(clean) > 3: headers.append(clean)
-            
-    return headers
+def extract_headers(txt):
+    h = []
+    for l in txt.split('\n'):
+        l=l.strip(); is_upper=l.isupper(); not_b=not re.match(r'^[•\-\*\d\.]',l); is_std=l.upper() in STD_HEADERS
+        if (len(l)<40 and is_upper and not_b) or is_std:
+            cl = re.sub(r'[:\.]+$','',l).strip()
+            if len(cl)>3: h.append(cl)
+    return h
 
-def get_pdf_headers(fp: Path) -> List[str]:
-    """Extract headers from a single PDF."""
-    try:
-        doc = pymupdf.open(fp)
-        txt = "".join(p.get_text() for p in doc)
-        doc.close()
-        return extract_headers(txt)
-    except: return []
-
-def get_data_dir():
-    if d := os.getenv('DATA_DIR'): return Path(d)
-    return Path(__file__).parent.parent/"data"
-
-def main(
-    cls_file: Path = None,
-    out_json: Path = None,
-    out_rpt: Path = None
-):
-    """Main discovery loop."""
-    data_dir = get_data_dir()
-    if not cls_file: cls_file = data_dir/"supply"/"2_file_inventory.json"
-    if not out_json: out_json = data_dir/"supply"/"4_section_headers.json"
-    if not out_rpt:  out_rpt  = data_dir/"supply"/"4_section_headers_report.md"
+def main():
+    dd = get_data_dir()
+    cls_P, out_J, out_R = dd/"supply"/"2_file_inventory.json", dd/"supply"/"4_section_headers.json", dd/"supply"/"4_section_headers_report.md"
+    if not cls_P.exists(): print(f"Missing {cls_P}"); sys.exit(1)
     
-    if not cls_file.exists():
-        print(f"Error: {cls_file} not found. Run Step 2 first.")
-        return
-
-    with open(cls_file, 'r') as f: inv = json.load(f)
-        
-    print("Discovering section headers in resumes...")
+    inv = json.loads(cls_P.read_text()); counts = Counter()
+    files = [Path(f['path']) for k in ['user_resumes','user_combined'] if k in inv for f in inv[k] if Path(f['path']).exists()]
     
-    counts = Counter()
-    n = 0
+    print(f"Scanning {len(files)} files...")
+    for f in files: counts.update(extract_headers(extract(f))); print(".",end="",flush=True)
     
-    # Scan resumes and combined docs - handle both old and new field names
-    cats = ['user_resumes', 'user_combined']
-    for cat in cats:
-        if cat not in inv: continue
-        files = inv[cat]
-        print(f"\nScanning {cat} ({len(files)} files)...")
-        
-        for finfo in files:
-            p = Path(finfo['path'])
-            if not p.exists(): continue
-            counts.update(get_pdf_headers(p))
-            n += 1
-            print(".", end="", flush=True)
-
-    print(f"\n\n✓ Discovery complete! Scanned {n} files.")
+    with open(out_J, 'w') as f: json.dump(dict(counts), f, indent=2, ensure_ascii=False)
     
-    # Save JSON
-    with open(out_json, 'w', encoding='utf-8') as f:
-        json.dump(dict(counts), f, indent=2, ensure_ascii=False)
-        
-    # Generate Report
-    with open(out_rpt, 'w', encoding='utf-8') as f:
-        f.write("# Resume Section Header Analysis\n\n")
-        f.write("Unique potential section headers found. Map to canonical sections.\n\n")
-        f.write("## Most Common Headers (Found in > 5 files)\n")
-        f.write("| Header | Occurrences | Recommended Mapping |\n")
-        f.write("| :--- | :--- | :--- |\n")
-        
-        sorted_h = sorted(counts.items(), key=lambda x: x[1], reverse=True)
-        for h, c in sorted_h:
-            if c >= 5: f.write(f"| **{h}** | {c} | _(Assign)_ |\n")
-                
-        f.write("\n## Less Common Headers\n")
-        for h, c in sorted_h:
-            if 1 < c < 5: f.write(f"- {h} ({c})\n")
+    rpt = "# Resume Section Header Analysis\n\n| Header | Count | Recommendation |\n|---|---|---|\n"
+    for h,c in sorted(counts.items(), key=lambda x:x[1], reverse=True):
+        if c>1: rpt += f"| **{h}** | {c} | {'Identify' if c>=5 else 'Check'} |\n"
+    out_R.write_text(rpt)
+    print(f"\n✓ Saved to {out_J} and {out_R}")
 
-    print(f"  Saved raw counts to: {out_json}")
-    print(f"  Saved report to: {out_rpt}")
-
-if __name__ == "__main__": main()
+if __name__=="__main__": main()
