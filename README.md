@@ -12,7 +12,7 @@ This system uses semantic search and LLM-based content generation to:
 
 ## Tech Stack
 
-- **Python 3.12** - Modern, stable Python environment (via Docker/UV)
+- **Python 3.14** - Modern, stable Python environment (via Docker/UV)
 - **uv** - Fast, reproducible Python package management
 - **Docker** - Containerized execution for consistency and privacy
 - **PyMuPDF** - PDF parsing and text extraction
@@ -53,7 +53,7 @@ docker compose run app python main.py --demo
 ## Setup
 
 ### Prerequisites
-- Python 3.12+ OR Docker
+- Python 3.14+ OR Docker
 
 ### Installation
 

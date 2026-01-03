@@ -1,5 +1,5 @@
-# Use official UV image (includes Python 3.12)
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+# Use official UV image (includes Python 3.14)
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
 
 WORKDIR /app
 
