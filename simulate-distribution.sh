@@ -5,6 +5,7 @@
 set -e
 
 echo "🏭 STEP 1: Mainainer (You) Builds the Image"
+REPO_ROOT="$PWD"
 # In real life, you'd do: docker build -t generic-user/resume-optimizer:v1 .
 # For simulation, we'll just tag it locally
 docker build -t local-resume-optimizer:latest .
@@ -49,7 +50,7 @@ EOF
 
 # 2. Key Config (Env file template)
 # We copy the example, but the user must fill it in.
-cp "$PWD/.env.example" ./.env
+cp "$REPO_ROOT/.env.example" ./.env
 
 echo "⚠️ NOTE: We copied .env.example to .env. You MUST edit it with your details!"
 

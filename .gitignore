@@ -193,8 +193,7 @@ $RECYCLE.BIN/
 # PROJECT SPECIFIC
 # ============================================
 
-# Personal diagnostic scripts (contain Nitin's specific filenames)
-# These are dev/debug tools with hardcoded personal data
+
 # Personal diagnostic scripts (contain specific filenames/paths)
 # These are dev/debug tools with hardcoded personal data
 scripts/2a_verify_classifications.py

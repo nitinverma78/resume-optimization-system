@@ -6,6 +6,8 @@ set -e
 
 echo "🧪 Setting up clean Docker test environment..."
 
+REPO_ROOT="$PWD"
+
 # Create test directory
 TEST_DIR=~/docker-test-resume-app
 rm -rf "$TEST_DIR"
@@ -15,16 +17,16 @@ cd "$TEST_DIR"
 echo "📁 Created clean directory: $TEST_DIR"
 
 # Copy only Docker-related files
-cp "$PWD/Dockerfile" .
-cp "$PWD/docker-compose.yml" .
-cp "$PWD/pyproject.toml" .
-cp "$PWD/uv.lock" .
-cp "$PWD/main.py" .
-cp "$PWD/.env" .
-cp -r "$PWD/scripts" .
-cp -r "$PWD/hooks" .
-cp -r "$PWD/simulate" .
-cp -r "$PWD/config" .
+cp "$REPO_ROOT/Dockerfile" .
+cp "$REPO_ROOT/docker-compose.yml" .
+cp "$REPO_ROOT/pyproject.toml" .
+cp "$REPO_ROOT/uv.lock" .
+cp "$REPO_ROOT/main.py" .
+cp "$REPO_ROOT/.env" .
+cp -r "$REPO_ROOT/scripts" .
+cp -r "$REPO_ROOT/hooks" .
+cp -r "$REPO_ROOT/simulate" .
+cp -r "$REPO_ROOT/config" .
 
 echo "✅ Files copied"
 echo ""
