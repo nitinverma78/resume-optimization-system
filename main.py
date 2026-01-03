@@ -20,7 +20,13 @@ def check_env(mode="normal", clean=False):
         print("🔧 Configuring Demo (Isolated)...")
         sim, d_data = ROOT/"simulate", ROOT/"simulate"/"data"
         os.environ.update({'RESUME_FOLDER':str(sim/"input_resumes"), 'USER_NAME':"Jane Doe", 'USER_EMAIL':"jane.doe@example.com", 'DATA_DIR':str(d_data)})
-        if d_data.exists(): print(f"🧹 Clearing {d_data.relative_to(ROOT)}"); shutil.rmtree(d_data)
+        print(f"📋 Env: USER_NAME={os.getenv('USER_NAME')}, USER_EMAIL={os.getenv('USER_EMAIL')}")
+        print(f"📋 Env: RESUME_FOLDER={os.getenv('RESUME_FOLDER')}")
+        if d_data.exists(): 
+            print(f"🧹 Clearing {d_data.relative_to(ROOT)}")
+            for item in d_data.iterdir(): 
+                if item.is_dir(): shutil.rmtree(item)
+                else: item.unlink()
         for d in ["supply/profile_data", "demand", "matching"]: (d_data/d).mkdir(parents=True, exist_ok=True)
         overrides['2_confirm.py'] = ["--config-dir", str(sim/"config")]
         return True, "✅ Demo Mode: simulate/data", overrides
@@ -32,6 +38,9 @@ def check_env(mode="normal", clean=False):
              if '=' in l and not l.strip().startswith('#'): k,v=l.strip().split('=',1); os.environ[k]=v.strip('"')
     if rf := os.getenv('RESUME_FOLDER'): os.environ['RESUME_FOLDER'] = os.path.expanduser(rf)
 
+    print(f"📋 Env: USER_NAME={os.getenv('USER_NAME')}, USER_EMAIL={os.getenv('USER_EMAIL')}")
+    print(f"📋 Env: RESUME_FOLDER={os.getenv('RESUME_FOLDER')}")
+    
     if not os.getenv('RESUME_FOLDER') or not Path(os.path.expanduser(os.getenv('RESUME_FOLDER'))).exists(): msgs.append("❌ Missing/Invalid RESUME_FOLDER")
     if not os.getenv('USER_NAME'): msgs.append("⚠️  Missing USER_NAME")
     if not os.getenv('USER_EMAIL'): msgs.append("⚠️  Missing USER_EMAIL")

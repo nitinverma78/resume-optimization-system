@@ -11,18 +11,22 @@ ENV UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project
 
-# Copy scripts ONLY (No config, No data)
 # Copy application code
 COPY scripts/ ./scripts/
-COPY config/  ./config/
-COPY *.py     ./
+COPY hooks/ ./hooks/
+COPY simulate/ ./simulate/
+COPY main.py ./
 
-# Default Env Var for the container structure
+# Install git hooks (for privacy validation)
+RUN chmod +x hooks/install.sh && ./hooks/install.sh
+
+# Default Env Var for container structure
 # This points to where we expect the USER to mount their resumes
 ENV RESUME_FOLDER="/input_resumes"
+ENV DATA_DIR="/app/data"
 
 # Python path must include site-packages from uv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Default command runs the full pipeline
-CMD ["python", "main.py"]
+# Default command runs demo mode
+CMD ["python", "main.py", "--demo"]

@@ -1,6 +1,16 @@
 version: '3.8'
 
 services:
+  # Demo mode - runs with Jane Doe simulation
+  demo:
+    build: .
+    image: resume-optimizer
+    command: python main.py --demo
+    volumes:
+      # Persist demo output for inspection
+      - ./simulate/data:/app/simulate/data
+
+  # Normal mode - requires .env and resume folder
   app:
     build: .
     image: resume-optimizer
@@ -10,17 +20,14 @@ services:
       - .env
 
     environment:
-      # Pass through variables from host .env to container
-      - USER_NAME=${USER_NAME:?err}
-      - USER_EMAIL=${USER_EMAIL:?err}
-
-      # Internal container path for resumes (Fixed standard)
+      # Override RESUME_FOLDER to point to container mount point
       - RESUME_FOLDER=/input_resumes
 
     volumes:
-      # 1. INPUT: Map host resume folder (from .env) to internal /input_resumes
-      # syntax: host_path:container_path:read_only
-      - ${RESUME_FOLDER:?err}:/input_resumes:ro
+      # 1. INPUT: Map host resume folder to /input_resumes
+      # NOTE: Use absolute path, not ~. Expand ~ to full path in .env
+      # Example: /Users/nitin/Downloads/MyResumeResources
+      - ${HOME}/Downloads/MyResumeResources:/input_resumes:ro
 
       # 2. OUTPUT: Persist generated data to local ./data folder
       - ./data:/app/data
