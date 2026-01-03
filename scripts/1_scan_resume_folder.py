@@ -1,132 +1,50 @@
 #!/usr/bin/env python3
 """[Supply Discovery] Step 1: Scan folder and create complete file inventory."""
-import json,os
+import json,os,sys
 from pathlib import Path
 from datetime import datetime
-from typing import List,Dict,NewType
-from pydantic import BaseModel
-
-# Type aliases
-FilePath = NewType('FilePath', Path)
-FileList = List['FileInfo']
+from typing import List
+from pydantic import BaseModel, ConfigDict
 
 class FileInfo(BaseModel):
-    """File metadata model."""
-    class Config: frozen = True
-    path: str
-    name: str
-    ext: str           # extension
-    sz: int            # size_bytes
-    modified: str      # modified_date
-    is_dir: bool       # is_directory
+    model_config = ConfigDict(frozen=True)
+    path: str; name: str; ext: str; sz: int; modified: str; is_dir: bool
 
 class FileInventory(BaseModel):
-    """Complete file inventory model."""
-    class Config: frozen = True
-    scan_date: str
-    src_folder: str    # source_folder
-    n_files: int       # total_files
-    n_dirs: int        # total_directories
-    files: FileList
+    model_config = ConfigDict(frozen=True)
+    scan_date: str; src_folder: str; n_files: int; n_dirs: int; files: List[FileInfo]
 
-def scan_folder(
-    folder: Path,        # Path to folder to scan
-    recursive: bool=True # Whether to scan subdirectories
-) -> FileList:           # List of FileInfo objects
-    """Scan folder and gather file information."""
+def get_data_dir(): return Path(os.getenv('DATA_DIR')) if os.getenv('DATA_DIR') else Path(__file__).parent.parent/"data"
+
+def scan_folder(folder: Path) -> List[FileInfo]:
     files = []
-    
-    def add_file(fp: Path, is_dir: bool=False):
+    def add(fp, is_dir=False):
         try:
             st = fp.stat()
-            files.append(FileInfo(
-                path=str(fp), name=fp.name,
-                ext=fp.suffix.lower() if not is_dir else "",
-                sz=st.st_size if not is_dir else 0,
-                modified=datetime.fromtimestamp(st.st_mtime).isoformat(),
-                is_dir=is_dir
-            ))
-        except (OSError, PermissionError) as e:
-            print(f"Warning: Could not access {fp}: {e}")
+            files.append(FileInfo(path=str(fp), name=fp.name, ext=fp.suffix.lower() if not is_dir else "",
+                                  sz=st.st_size if not is_dir else 0, modified=datetime.fromtimestamp(st.st_mtime).isoformat(), is_dir=is_dir))
+        except Exception as e: print(f"Warning: {fp}: {e}")
     
-    def skip(name): return name.startswith('.') or name.startswith('~$')
-    
-    if recursive:
-        for root, dirs, fnames in os.walk(folder):
-            for fn in fnames:
-                if skip(fn): continue
-                add_file(Path(root)/fn, is_dir=False)
-            for dn in dirs:
-                if skip(dn): continue
-                add_file(Path(root)/dn, is_dir=True)
-    else:
-        for item in folder.iterdir():
-            if skip(item.name): continue
-            add_file(item, is_dir=item.is_dir())
-    
+    for root, dirs, fnames in os.walk(folder):
+        [add(Path(root)/n, False) for n in fnames if not n.startswith(('.', '~$'))]
+        [add(Path(root)/n, True) for n in dirs if not n.startswith(('.', '~$'))]
     return files
 
-def get_data_dir():
-    if d := os.getenv('DATA_DIR'): return Path(d)
-    return Path(__file__).parent.parent/"data"
+def main():
+    out = get_data_dir()/"supply"/"1_file_inventory.json"
+    if not (fld := os.getenv('RESUME_FOLDER')): print("Error: RESUME_FOLDER not set."); sys.exit(1)
+    folder = Path(os.path.expanduser(fld))
+    if not folder.exists(): print(f"Error: Not found: {folder}"); sys.exit(1)
+    
+    print(f"Scanning: {folder}...")
+    files = scan_folder(folder)
+    f_list, d_list = [f for f in files if not f.is_dir], [f for f in files if f.is_dir]
 
-def main(
-    folder: Path = None,
-    out: Path = None
-):
-    """Main execution."""
-    if not out: out = get_data_dir()/"supply"/"1_file_inventory.json"
-    # Must use RESUME_FOLDER env var if argument not provided
-    if not folder:
-        if env_folder := os.getenv('RESUME_FOLDER'):
-            folder = Path(os.path.expanduser(env_folder))
-        else:
-            print("Error: RESUME_FOLDER not set. Please set it in .env or pass as argument.")
-            return
-
-    if not folder.exists():
-        print(f"Error: Folder not found: {folder}")
-        print("Please provide a valid folder path.")
-        return
-    
-    print(f"Scanning folder: {folder}")
-    print("This may take a moment for large folders...\n")
-    
-    files = scan_folder(folder, recursive=True)
-    
-    # Separate files and directories
-    file_list = [f for f in files if not f.is_dir]
-    dir_list  = [f for f in files if f.is_dir]
-    
-    # Create inventory
-    inv = FileInventory(
-        scan_date=datetime.now().isoformat(),
-        src_folder=str(folder),
-        n_files=len(file_list), n_dirs=len(dir_list),
-        files=files
-    )
-    
-    # Save to JSON
+    inv = FileInventory(scan_date=datetime.now().isoformat(), src_folder=str(folder), n_files=len(f_list), n_dirs=len(d_list), files=files)
     out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out, 'w', encoding='utf-8') as f:
-        json.dump(inv.model_dump(), f, indent=2, ensure_ascii=False)
+    with open(out, 'w', encoding='utf-8') as f: json.dump(inv.model_dump(), f, indent=2, ensure_ascii=False)
     
-    print(f"✓ Scan complete!")
-    print(f"✓ Found {len(file_list)} files in {len(dir_list)} directories")
-    print(f"✓ Saved to: {out}\n")
-    
-    # File type breakdown
-    exts = {}
-    for f in file_list:
-        e = f.ext if f.ext else "(no extension)"
-        exts[e] = exts.get(e, 0) + 1
-    
-    print("File type breakdown:")
-    for e, cnt in sorted(exts.items(), key=lambda x: x[1], reverse=True):
-        print(f"  {e}: {cnt} files")
-    
-    # Size summary
-    total_sz = sum(f.sz for f in file_list)
-    print(f"\nTotal size: {total_sz / (1024*1024):.2f} MB")
+    print(f"✓ Found {len(f_list)} files, {len(d_list)} dirs -> {out}")
+    print(f"Total size: {sum(f.sz for f in f_list)/(1024*1024):.2f} MB")
 
 if __name__ == "__main__": main()

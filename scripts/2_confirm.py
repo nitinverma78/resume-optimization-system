@@ -1,65 +1,31 @@
 #!/usr/bin/env python3
 """[Supply Discovery] Step 2 Confirm: Classification test suite."""
-import json,sys
+import json,sys,os,argparse
 from pathlib import Path
 
-import os, argparse
-def get_data_dir():
-    if d := os.getenv('DATA_DIR'): return Path(d)
-    return Path(__file__).parent.parent/"data"
+def get_data_dir(): return Path(os.getenv('DATA_DIR')) if os.getenv('DATA_DIR') else Path(__file__).parent.parent/"data"
 
-# DATA = Path(__file__).parent.parent/"data"/"supply"/"2_file_inventory.json"
-# (Module constant removed locally, resolved in run())
-
-def get_config_path():
-    """Resolve config path from Arg > Env > Default."""
-    default_dir = Path(__file__).parent.parent/"config"
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-dir", help="Path to config directory")
-    args, _ = parser.parse_known_args()
-    
-    cfg_dir = Path(args.config_dir) if args.config_dir else Path(os.getenv('CONFIG_DIR', str(default_dir)))
-    print(f"DEBUG: Using config dir: {cfg_dir}")
-    return cfg_dir/"classification_config.json"
-
-CFG = get_config_path()
-
-def load_tests() -> dict:
-    """Load test cases from config: {filename: expected_category}."""
-    if not CFG.exists(): return {}
-    with open(CFG) as f: cfg = json.load(f)
-    return {fn: cat for cat, fns in cfg.get('test_cases', {}).items() for fn in fns}
-
-def run():
-    """Run tests, return (passed, failed, missing, failures)."""
-    tests = load_tests()
-    if not tests:  return 0, 0, 0, []
-    
-    DATA = get_data_dir()/"supply"/"2_file_inventory.json"
-    if not DATA.exists():
-        print(f"❌ Not found: {DATA}"); return 0, 0, len(tests), []
-    
-    with open(DATA) as f: data = json.load(f)
-    actual = {f['name']: cat for cat, files in data.items() for f in files}
-    
-    p, f, m, fails = 0, 0, 0, []
-    for fn, exp in tests.items():
-        if   fn not in actual:   m += 1; fails.append(f"⚠️  MISSING: {fn}")
-        elif actual[fn] == exp:  p += 1
-        else: f += 1; fails.append(f"❌ {fn}: expected {exp}, got {actual[fn]}")
-    return p, f, m, fails
+def get_cfg():
+    p = argparse.ArgumentParser(); p.add_argument("--config-dir"); args, _ = p.parse_known_args()
+    return (Path(args.config_dir) if args.config_dir else Path(os.getenv('CONFIG_DIR', str(Path(__file__).parent.parent/"config"))))/"classification_config.json"
 
 def main():
-    print("="*60 + "\nClassification Test Suite\n" + "="*60 + "\n")
-    p, f, m, fails = run()
-    tot = p + f + m
+    print("="*60 + "\nClassification Test Suite\n" + "="*60)
+    cfg, data_path = get_cfg(), get_data_dir()/"supply"/"2_file_inventory.json"
     
-    if tot == 0: print("No tests. Add test_cases to config/classification_config.json"); sys.exit(0)
-    if fails:    print("FAILURES:\n" + "\n".join(fails) + "\n")
+    if not cfg.exists(): print("No config."); sys.exit(0)
+    if not data_path.exists(): print(f"❌ Missing: {data_path}"); sys.exit(1)
+
+    tests = {fn: cat for cat, fns in json.loads(cfg.read_text()).get('test_cases', {}).items() for fn in fns}
+    if not tests: print("No tests defined."); sys.exit(0)
     
-    print("="*60 + f"\nResults: {p}/{tot} passed, {f} failed, {m} missing\n" + "="*60)
-    print("✅ All passed!" if f == 0 and m == 0 else "❌ Some failed/missing.")
-    sys.exit(0 if f == 0 and m == 0 else 1)
+    actual = {f['name']: cat for cat, files in json.loads(data_path.read_text()).items() for f in files}
+    fails = [f"⚠️  MISSING: {fn}" if fn not in actual else f"❌ {fn}: exp {exp} got {actual[fn]}" 
+             for fn, exp in tests.items() if fn not in actual or actual[fn] != exp]
+
+    if fails: print("FAILURES:\n" + "\n".join(fails))
+    print(f"\nResults: {len(tests)-len(fails)}/{len(tests)} passed.")
+    print("✅ All passed!" if not fails else "❌ Some failed.")
+    sys.exit(bool(fails))
 
 if __name__ == "__main__": main()

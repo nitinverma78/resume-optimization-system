@@ -1,223 +1,84 @@
 #!/usr/bin/env python3
-"""[Supply Knowledge Extraction] Step 5: Extract structured content from resumes."""
-import json,os,re,pymupdf
+"""[Supply Knowledge Extraction] Step 5: Extract structured content."""
+import json,re,os,sys
 from pathlib import Path
-from dataclasses import dataclass
-from typing import List,Dict,Any,NewType,Set
+from scripts.lib_extract import extract
 
-# Domain Types (RL-book pattern)
-SectionName = NewType('SectionName', str)
-BulletText  = NewType('BulletText', str)
-Theme       = NewType('Theme', str)
-CompanyName = NewType('CompanyName', str)
-
-# Type Aliases
-SectionContent = Dict[str, Dict[str, Any]]  # {'header': str, 'content': List[str]}
-BulletInfo     = Dict[str, Any]             # {'text': str, 'tags': List[str]}
-ExperienceBlock = Dict[str, Any]            # {'company': str, 'role': str, 'bullets': List}
-
-@dataclass(frozen=True)
-class ParsedResume:
-    """Immutable parsed resume data."""
-    source_file: str
-    role_intent: str
-    summary: str
-    skills: Dict[str, List[str]]
-    patents: tuple
-    publications: tuple
-    talks: tuple
-
-# --- Section Patterns ---
-SEC_PATTERNS = {
-    "Summary":     r"(?i)^(SUMMARY|PROFILE|PROFESSIONAL SUMMARY|EXECUTIVE SUMMARY|.*LEADER|.*OFFICER|.*CONTACT)$",
-    "Experience":  r"(?i)^(PROFESSIONAL EXPERIENCE|EXPERIENCE|WORK HISTORY|CAREER HIGHLIGHTS|RECENT EXPERIENCES|PRIOR EXPERIENCES|ENGAGEMENT)$",
-    "Skills":      r"(?i)^(SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|AREAS OF EXPERTISE|TECHNICAL ARSENAL|CAPABILITIES|TECHNOLOGIES)$",
-    "Education":   r"(?i)^(EDUCATION|ACADEMIC BACKGROUND)$",
-    "Patents":     r"(?i)^(PATENTS|INVENTIONS)$",
-    "Publications": r"(?i)^(PUBLICATIONS|SELECTED PUBLICATIONS)$",
-    "Talks":       r"(?i)^(TALKS|PRESENTATIONS|INVITED TALKS|SPEAKING ENGAGEMENTS)$",
-    "Awards":      r"(?i)^(AWARDS|HONORS|RECOGNITION)$"
+SEC_PATS = {
+    "Summary": r"(?i)^(SUMMARY|PROFILE|PROFESSIONAL SUMMARY|EXECUTIVE SUMMARY)$",
+    "Experience": r"(?i)^(PROFESSIONAL EXPERIENCE|EXPERIENCE|WORK HISTORY)$",
+    "Skills": r"(?i)^(SKILLS|TECHNICAL SKILLS|CORE COMPETENCIES|AREAS OF EXPERTISE)$",
+    "Education": r"(?i)^(EDUCATION)$",
+    "Patents": r"(?i)^(PATENTS|INVENTIONS)$",
+    "Publications": r"(?i)^(PUBLICATIONS)$",
+    "Talks": r"(?i)^(TALKS)$",
+    "Awards": r"(?i)^(AWARDS)$"
 }
 
-# Skill keywords
-HARD_KW = {'python','java','c++','sql','aws','cloud','pytorch','tensorflow','machine learning',
-           'ai','nlp','robotics','algorithms','architecture','distributed systems','api','backend',
-           'frontend','react','node','docker','kubernetes','linux','git','ci/cd'}
-SOFT_KW = {'leadership','strategy','management','mentoring','communication','negotiation',
-           'stakeholder','vision','roadmap','agile','scrum','budget','hiring','team building',
-           'cross-functional','collaboration','business development','transformation'}
+def get_data_dir(): return Path(os.getenv('DATA_DIR') or Path(__file__).parent.parent/"data")
 
-# Themes for bullet tagging
-THEMES = {
-    "Leadership": ['led','managed','hired','mentored','strategy','vision','budget','team','stakeholder'],
-    "Technical Delivery": ['built','developed','architected','deployed','engineered','platform','system'],
-    "Optimization": ['reduced','saved','improved','efficiency','optimized','cost','profit'],
-    "Innovation": ['patent','research','paper','novel','state-of-the-art','cutting-edge'],
-    "Product": ['roadmap','customer','launch','user','market','revenue']
-}
-
-RECENT_COS = ['manifold','aspen','tag','staples','investor']
-
-def extract_pdf(fp: Path) -> str:
-    try:
-        doc = pymupdf.open(fp)
-        txt = "".join(p.get_text()+"\n" for p in doc)
-        return txt
-    except Exception as e:
-        print(f"Error reading {fp.name}: {e}")
-        return ""
-
-def identify_sections(lines: List[str]) -> Dict[str,Dict]:
-    """Segment text into sections."""
-    secs = {"Uncategorized": {'header': 'Start', 'content': []}}
-    cur = "Uncategorized"
-    
-    for line in lines:
-        line = line.strip()
-        if not line: continue
-        
-        matched = None
-        for cat, pat in SEC_PATTERNS.items():
-            if len(line) < 60 and re.match(pat, line):
-                matched = cat
-                break
-        
-        if matched:
-            cur = matched
-            if cur not in secs: secs[cur] = {'header': line, 'content': []}
-        else:
-            secs[cur]['content'].append(line)
-            
+def identify_sections(lines):
+    secs = {"Uncategorized": {'header': 'Start', 'content': []}}; cur = "Uncategorized"
+    for line in [l.strip() for l in lines if l.strip()]:
+        matched = next((cat for cat, pat in SEC_PATS.items() if len(line)<60 and re.match(pat, line)), None)
+        if matched: cur=matched; secs[cur]={'header':line, 'content':[]}
+        else: secs[cur]['content'].append(line)
     return secs
 
-def classify_skills(lines: List[str]) -> Dict[str,List[str]]:
-    """Split skills into Hard/Soft buckets."""
+HARD_KW = {'python','java','c++','sql','aws','pytorch','tensorflow','docker','kubernetes','linux','git'} 
+SOFT_KW = {'leadership','strategy','management','agile','communication','stakeholder'}
+THEMES = {"Leadership":['led','managed','strategy'], "Technical":['built','deployed','system'], "Optimization":['improved','saved']}
+RECENT_COS = ['manifold','aspen','tag','staples','investor']
+
+def classify_skills(lines):
     hard, soft, other = [], [], []
     for line in lines:
-        line = line.strip()
-        if not line: continue
         lo = line.lower()
-        has_hard = any(k in lo for k in HARD_KW)
-        has_soft = any(k in lo for k in SOFT_KW)
-        is_sent  = len(line.split()) > 5 or ":" in line
-        
-        if   has_soft:         soft.append(line)
-        elif has_hard:
-            if is_sent: soft.append(line)
-            else:       hard.append(line)
-        else:                  other.append(line)
-    return {'hard': hard, 'soft': soft, 'other': other}
+        if any(k in lo for k in HARD_KW) and len(line.split())<10: hard.append(line)
+        elif any(k in lo for k in SOFT_KW): soft.append(line)
+        else: other.append(line)
+    return {'hard':hard,'soft':soft,'other':other}
 
-def tag_bullet(txt: str) -> List[str]:
-    lo = txt.lower()
-    return [th for th, kw in THEMES.items() if any(k in lo for k in kw)]
-
-def parse_exp(lines: List[str]) -> Dict[str,List[Dict]]:
-    """Segment experience into Recent vs Earlier."""
-    recent, earlier = [], []
-    blk = {'company': 'Unknown', 'role': '', 'bullets': [], 'tags': set(), 'raw_text': []}
-    
-    all_cos = RECENT_COS + ['zulily','amazon','fico','dash','fair isaac']
+def parse_exp(lines):
+    recs, earls = [], []; blk = None; ALL = RECENT_COS + ['zulily','amazon']
+    def save(b): (recs if any(r in b['company'].lower() for r in RECENT_COS) else earls).append(b)
     
     for line in lines:
-        line = line.strip()
-        if not line: continue
-        lo = line.lower()
-        
-        # Detect company header
-        det_co = ""
-        if len(line) < 100:
-            for co in all_cos:
-                if co in lo:
-                    det_co = co.capitalize()
-                    break
-        
-        if det_co:
-            # Save previous
-            if blk['raw_text']:
-                is_recent = any(r in blk['company'].lower() for r in RECENT_COS)
-                (recent if is_recent else earlier).append(blk)
-            blk = {'company': det_co, 'role': '', 'bullets': [], 'tags': set(), 'raw_text': [line]}
-        else:
-            blk['raw_text'].append(line)
-            if line.startswith(('•','-','*')) or len(line) > 60:
-                clean = re.sub(r'^[•\-\*]\s*', '', line).strip()
-                tags = tag_bullet(clean)
-                blk['bullets'].append({'text': clean, 'tags': tags})
-                blk['tags'].update(tags)
-            elif len(line) < 60 and not blk['role']:
-                blk['role'] = line
-    
-    # Save last
-    if blk['raw_text']:
-        is_recent = any(r in blk['company'].lower() for r in RECENT_COS)
-        (recent if is_recent else earlier).append(blk)
-    
-    # Serialize sets
-    for b in recent + earlier: b['tags'] = list(b['tags'])
-    return {'recent': recent, 'earlier': earlier}
+        is_co = any(c in line.lower() for c in ALL) and len(line)<100
+        if is_co:
+            if blk: save(blk)
+            blk={'company':line,'role':'','bullets':[],'tags':set()}
+        elif blk:
+            if line.startswith(('•','-')): 
+                t=re.sub(r'^[•\-\*]\s*','',line)
+                tags = [k for k,kw in THEMES.items() if any(x in t.lower() for x in kw)]
+                blk['bullets'].append({'text':t,'tags':tags}); blk['tags'].update(tags)
+            elif not blk['role']: blk['role']=line
+    if blk: save(blk)
+    for b in recs+earls: b['tags']=list(b.get('tags',[]))
+    return {'recent':recs, 'earlier':earls}
 
-def process_resume(fp: Path) -> Dict[str,Any]:
-    """Process a single resume file."""
-    txt = extract_pdf(fp)
-    secs = identify_sections(txt.split('\n'))
-    
-    data = {
-        "source_file": fp.name, "role_intent": "General", "summary": "",
-        "skills": {}, "experience": {'recent':[], 'earlier':[]},
-        "patents": [], "publications": [], "talks": []
-    }
-    
-    if "Summary" in secs:
-        s = secs["Summary"]
-        data["role_intent"] = s['header']
-        data["summary"] = "\n".join(s['content'])
-    if "Skills" in secs:
-        data["skills"] = classify_skills(secs["Skills"]['content'])
-    if "Patents" in secs:      data["patents"] = secs["Patents"]['content']
-    if "Publications" in secs: data["publications"] = secs["Publications"]['content']
-    if "Talks" in secs:        data["talks"] = secs["Talks"]['content']
-    if "Experience" in secs:   data["experience"] = parse_exp(secs["Experience"]['content'])
-    
+def process(fp):
+    txt = extract(fp); secs = identify_sections(txt.split('\n'))
+    data = {"source_file":fp.name, "role_intent":secs.get("Summary",{}).get("header","General"), "summary":"\n".join(secs.get("Summary",{}).get("content",[])), "skills":{}, "experience":{'recent':[],'earlier':[]} }
+    if "Skills" in secs: data["skills"] = classify_skills(secs["Skills"]['content'])
+    if "Experience" in secs: data["experience"] = parse_exp(secs["Experience"]['content'])
+    for k in ["Patents","Publications","Talks"]: 
+        if k in secs: data[k.lower()] = secs[k]['content']
     return data
 
-def get_data_dir():
-    if d := os.getenv('DATA_DIR'): return Path(d)
-    return Path(__file__).parent.parent/"data"
+def main():
+    dd = get_data_dir()
+    cls_P, out_P = dd/"supply"/"2_file_inventory.json", dd/"supply"/"5_extracted_content.json"
+    if not cls_P.exists(): print (f"Missing {cls_P}"); sys.exit(1)
+    
+    inv = json.loads(cls_P.read_text()); db = []
+    files = [Path(f['path']) for k in ['user_resumes','user_combined'] if k in inv for f in inv[k] if Path(f['path']).exists()]
+    
+    print(f"Extracting {len(files)} files...")
+    for f in files: db.append(process(f)); print(".", end="", flush=True)
+    
+    with open(out_P, 'w') as f: json.dump(db, f, indent=2, ensure_ascii=False)
+    print(f"\n✓ Saved {len(db)} to {out_P}")
 
-def main(
-    cls_file: Path = None,
-    out_db: Path = None
-):
-    """Main extraction loop."""
-    data_dir = get_data_dir()
-    if not cls_file: cls_file = data_dir/"supply"/"2_file_inventory.json"
-    if not out_db: out_db = data_dir/"supply"/"5_extracted_content.json"
-    
-    if not cls_file.exists():
-        print(f"Error: {cls_file} not found.")
-        return
-        
-    with open(cls_file, 'r') as f: inv = json.load(f)
-        
-    print("Extracting content from resumes...")
-    
-    db = []
-    n = 0
-    
-    for cat in ['user_resumes', 'user_combined']:
-        if cat not in inv: continue
-        for finfo in inv[cat]:
-            p = Path(finfo['path'])
-            if not p.exists(): continue
-            db.append(process_resume(p))
-            n += 1
-            print(".", end="", flush=True)
-            
-    print(f"\n\n✓ Content extraction complete! Processed {n} documents.")
-    
-    with open(out_db, 'w', encoding='utf-8') as f:
-        json.dump(db, f, indent=2, ensure_ascii=False)
-    print(f"  Database saved to: {out_db}")
-
-if __name__ == "__main__": main()
+if __name__=="__main__": main()
