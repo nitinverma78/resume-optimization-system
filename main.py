@@ -29,6 +29,7 @@ def check_env(mode="normal", clean=False):
                 else: item.unlink()
         for d in ["supply/profile_data", "demand", "matching"]: (d_data/d).mkdir(parents=True, exist_ok=True)
         overrides['2_confirm.py'] = ["--config-dir", str(sim/"config")]
+        overrides['6_build_knowledge_base.py'] = ["--config", str(sim/"config"/"knowledge_base.json")]
         return True, "✅ Demo Mode: simulate/data", overrides
 
     if clean and (d:=ROOT/"data").exists(): print("🧹 Cleaning data/..."); shutil.rmtree(d)

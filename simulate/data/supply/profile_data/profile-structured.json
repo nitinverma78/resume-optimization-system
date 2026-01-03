@@ -1,0 +1,18 @@
+{
+  "name": "Jane Doe",
+  "headline": "Headline: Software Engineer | Python & Machine Learning | Building AI-Powered Solutions",
+  "summary": ":",
+  "contact": {},
+  "skills": [],
+  "experiences": [],
+  "education": [
+    {
+      "school": "University Name",
+      "degree": "Degree",
+      "field": "Field",
+      "years": "2010-2014"
+    }
+  ],
+  "patents": [],
+  "publications": []
+}

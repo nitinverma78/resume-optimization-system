@@ -1,0 +1,13 @@
+{
+  "company_map": {
+    "tech": "TechCorp",
+    "startup": "Startup Inc",
+    "finance": "BigBank",
+    "retail": "ShopMart"
+  },
+  "tag_taxonomy": {
+    "Leadership": ["lead", "manager", "director", "mentor"],
+    "Technical": ["python", "docker", "cloud", "react"],
+    "Impact": ["growth", "revenue", "saved", "optimized"]
+  }
+}
