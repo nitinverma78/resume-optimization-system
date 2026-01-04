@@ -15,6 +15,14 @@ FOLDERS = {'Presentations':'presentation', 'Roles':'jd', 'Jobs':'jd', 'Recruiter
 
 def get_data_dir(): return Path(os.getenv('DATA_DIR') or Path(__file__).parent.parent/"data")
 
+# Manual .env loading
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    for l in env_path.read_text().splitlines():
+        if '=' in l and not l.strip().startswith('#'):
+            k, v = l.strip().split('=', 1)
+            if not os.getenv(k): os.environ[k] = v.strip('"').strip("'")
+
 def get_cat(fp, name, email):
     fn, ext, txt = fp.name.lower(), fp.suffix.lower(), None
     def get_txt(): nonlocal txt; txt = extract(fp).lower() if txt is None else txt; return txt
@@ -26,11 +34,15 @@ def get_cat(fp, name, email):
     if any(x in fn for x in ['work search','job search']): return 'jd','Job search log'
     if any(x in fn for x in ['companies','top10k','top50k','jobsearchresults','professionalservices','hightech']): return 'company','Company list'
     if ('exec' in fn and 'search' in fn) or 'recruiter' in fn: return 'recruiter','Recruiter info'
-    if ext in ['.xlsx','.csv'] and 'tracking' not in fn: return 'other','Spreadsheet'
-    if ext not in ['.pdf','.docx','.doc','.pptx','.txt']: return 'other',f'Unsupported {ext}'
+    if ('exec' in fn and 'search' in fn) or 'recruiter' in fn: return 'recruiter','Recruiter info'
+    
+    # Allow spreadsheets to fall through to content check
+    if ext not in ['.pdf','.docx','.doc','.pptx','.txt','.xlsx','.csv']: return 'other',f'Unsupported {ext}'
 
     t = get_txt(); 
     if not t: return 'other','No text'
+
+    if 'company name' in t and ext in ['.xlsx','.csv']: return 'company','Company List (Header)'
 
     jd_pats = [r'job description',r'responsibilities',r'requirements',r'qualifications',r'we are (?:looking|seeking)']
     if 'job description' in fn or 'jd' in fn or sum(bool(re.search(p,t)) for p in jd_pats)>=3: return 'jd','JD content/name'
