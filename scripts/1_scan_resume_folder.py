@@ -16,6 +16,14 @@ class FileInventory(BaseModel):
 
 def get_data_dir(): return Path(os.getenv('DATA_DIR')) if os.getenv('DATA_DIR') else Path(__file__).parent.parent/"data"
 
+# Manual .env loading
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    for l in env_path.read_text().splitlines():
+        if '=' in l and not l.strip().startswith('#'):
+            k, v = l.strip().split('=', 1)
+            if not os.getenv(k): os.environ[k] = v.strip('"').strip("'")
+
 def scan_folder(folder: Path) -> List[FileInfo]:
     files = []
     def add(fp, is_dir=False):
